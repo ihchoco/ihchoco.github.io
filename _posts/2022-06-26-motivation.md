@@ -6,6 +6,9 @@ tag: [motivation, movie]
 toc: true
 author_profile: false
 search: true
+author_profil: false
+sidebar:
+    nav: "docs"
 ---
 
 ##### 영화장면
