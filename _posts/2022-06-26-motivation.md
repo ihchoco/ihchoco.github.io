@@ -4,11 +4,11 @@ title: "[동기부여] 포기하고 싶을때 보면 도움이 되는 장면"
 categories: motivation
 tag: [motivation, movie]
 toc: true
+toc_sticky: true
+toc_label: 목 차
 author_profile: false
 search: true
 author_profil: false
-sidebar:
-    nav: "docs"
 ---
 
 ##### 영화장면

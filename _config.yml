@@ -105,7 +105,7 @@ analytics:
 # Site Author
 author:
   name             : "차가운핫초코"
-  avatar           : # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
+  avatar           : "/images/profile.jpeg"
   bio              : "Keep It Simple Stupid"
   location         : "South Korea"
   email            :
@@ -267,5 +267,8 @@ defaults:
       share: true
       related: true
       show_date: true
+      toc: true
+      toc_sticky: true
+      toc_label: 목 차
 
 date_format: "%Y-%m-%d"
