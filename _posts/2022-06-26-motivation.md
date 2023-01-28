@@ -1,16 +1,14 @@
 ---
 layout: single
 title: "[동기부여] 포기하고 싶을때 보면 도움이 되는 장면"
-categories: blog
-tag: [blog, motivation, movie]
+categories: motivation
+tag: [motivation, movie]
 toc: true
 author_profile: false
 search: true
 ---
 
-#### 수학을 잘하는 사람은?
-
-##### 영화명대사
+##### 영화장면
 
 ![image1](../../images/etc/motivation/In_Our_Prime/1.png)
 ![image2](../../images/etc/motivation/In_Our_Prime/2.png)
@@ -41,9 +39,9 @@ search: true
 
 #### 포스팅 계기
 
-무엇을 해야할지 모르겠고 오랜만에 공부를 하려고 해도 이해가 잘안되어서 자포자기 할 때 우연히 이 영화를 보는도중 이 장면이 너무 인상적이었습니다
+자포자기 할 때 우연히 영화를 보는도중 이 장면이 너무 인상적이었습니다
 
-슬럼프를 겪을때 이 장면을 보면서 다시한번 포기하지 말고 덤덤하게 받아들이면서 다시 도전하는 마음을 갖기위해 포스팅하게 되었습니다
+슬럼프를 겪는분들에게 도움이 되었으면 좋겠습니다
 
 <br>
 <br>
@@ -52,9 +50,6 @@ search: true
 
 <br>
 
-> ※ 이 영화는 포스팅 날짜(2022년 06월 26일)기준 넷플릭스에서 보실 수 있습니다.\
->  (넷플릭스 광고 X)
-
-슬럼프를 겪는분들에게 동기부여가 될 수 있었으면 좋겠습니다
+> ※ 이 영화는 포스팅 날짜(2022년 06월 26일)기준 넷플릭스에서 보실 수 있습니다.
 
 ![poster2](../../images/etc/motivation/In_Our_Prime/poster2.jpeg)
