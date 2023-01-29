@@ -125,6 +125,11 @@ blockquote {
 
 /* links */
 
+/* 2023.01.29 블로그 커스텀(a태그 밑줄 제거)*/
+a{
+  text-decoration : none;
+}
+
 a {
   &:focus {
     @extend %tab-focus;
