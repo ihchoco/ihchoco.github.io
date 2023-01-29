@@ -12,7 +12,7 @@ search: true
 
 #### 1. AOP가 필요한 상황
 
-![img2](../../../images/posts/java/spring/chapter15/1.png) {: .img-width-half}
+![img2](../../../images/posts/java/spring/chapter15/1.png) {: .img-width-half .align-center}
 
 악덕상사 : 모든 메소드의 호출 시간을 측정해봐
 
