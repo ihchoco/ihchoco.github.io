@@ -6,6 +6,8 @@ tag: [java, spring]
 toc : true
 author_profile: false
 search: true
+sidebar:
+    nav: "counts"
 ---
 
 ### 깃허브 레퍼지토리 및 프로젝트 폴더 생성

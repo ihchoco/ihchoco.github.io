@@ -6,6 +6,8 @@ tag: [java, spring]
 toc : true
 author_profile: false
 search: true
+sidebar:
+    nav: "counts"
 ---
 
 ### JPA와 데이터 연동

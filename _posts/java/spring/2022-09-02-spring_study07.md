@@ -6,6 +6,8 @@ tag: [java, spring]
 toc : true
 author_profile: false
 search: true
+sidebar:
+    nav: "counts"
 ---
 
 ### 스프링부트 WEB개발 3가지 방식

@@ -6,6 +6,8 @@ tag: [java, spring]
 toc : true
 author_profile: false
 search: true
+sidebar:
+    nav: "counts"
 ---
 
 ### 스프링부트 H2 데이터베이스 설치
