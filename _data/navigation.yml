@@ -6,8 +6,6 @@ main:
     url: /tags/
   - title: "연도별 검색"
     url: /year-archive/
-  - title: "연도별 검색(그리드)"
-    url: /year-archive-grid/
   - title: "검색"
     url: /search/
 
