@@ -1,7 +1,7 @@
 ---
 layout: single
-title : "[JAVA] 스프링부트 H2 데이터베이스 설치"
-categories: [java, spring]
+title : "[SPRING] 스프링부트 H2 데이터베이스 설치"
+categories: [spring]
 tag: [java, spring]
 toc : true
 author_profile: false

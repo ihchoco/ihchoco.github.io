@@ -1,7 +1,7 @@
 ---
 layout: single
-title : "[JAVA] 스프링 빈과 의존관계"
-categories: [java, spring]
+title : "[SPRING] 스프링 빈과 의존관계"
+categories: [spring]
 tag: [java, spring]
 toc : true
 author_profile: false

@@ -1,7 +1,7 @@
 ---
 layout: single
-title : "[JAVA] 스프링부트 MVC 기초 "
-categories: [java, spring]
+title : "[SPRING] 스프링부트 MVC 기초 "
+categories: [spring]
 tag: [java, spring]
 toc : true
 author_profile: false

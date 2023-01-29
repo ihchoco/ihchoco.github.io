@@ -1,7 +1,7 @@
 ---
 layout: single
-title : "[JAVA] 스프링부트 JDBC 연결방법"
-categories: [java, spring]
+title : "[SPRING] 스프링부트 JDBC 연결방법"
+categories: [spring]
 tag: [java, spring]
 toc : true
 author_profile: false

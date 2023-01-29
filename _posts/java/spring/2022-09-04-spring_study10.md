@@ -1,7 +1,7 @@
 ---
 layout: single
-title : "[JAVA] 스프링부트 회원관리예제-화면"
-categories: [java, spring]
+title : "[SPRING] 스프링부트 회원관리예제-화면"
+categories: [spring]
 tag: [java, spring]
 toc : true
 author_profile: false
