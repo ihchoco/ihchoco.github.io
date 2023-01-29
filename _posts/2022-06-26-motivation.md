@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "[동기부여] 포기하고 싶을때 보면 도움이 되는 장면"
+title: "[동기부여] 이상한 나라의 수학자"
 categories: motivation
 tag: [motivation, movie]
 toc: true
