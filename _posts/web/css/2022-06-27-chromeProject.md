@@ -6,6 +6,8 @@ tag: [web, css, project]
 toc : true
 author_profile: false
 search: true
+sidebar:
+    nav: "counts"
 ---
 
 

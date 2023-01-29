@@ -6,6 +6,8 @@ tag: [web, css]
 toc : true
 author_profile: false
 search: true
+sidebar:
+    nav: "counts"
 ---
 
 ### CSS 퍼블리싱 교육내용 정리

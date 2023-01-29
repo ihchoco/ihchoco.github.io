@@ -8,6 +8,8 @@ author_profile: false
 sidebar:
     nav: "docs"
 search: true
+sidebar:
+    nav: "counts"
 ---
 
 ### 책소개

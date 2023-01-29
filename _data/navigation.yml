@@ -19,10 +19,8 @@ docs:
       - title: "Tag"
         url: /tags/
         
-
-#   - title: "Java"
-#     children:
-#       - title: "Java"
-#         url: "/java"
-#       - title: "Spring"
-#         url:  "/spring"
+ counts:
+   - title: "카테고리"
+     use: true
+   - title: "태그"
+     use: false 

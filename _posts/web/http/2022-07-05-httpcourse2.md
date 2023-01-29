@@ -6,6 +6,8 @@ tag: [HTTP, NETWWORK WEB]
 toc : true
 author_profile: false
 search: false
+sidebar:
+    nav: "counts"
 ---
 
 **[HTTP강좌]** [모든 개발자를 위한 HTTP 웹 기본지식](https://ihchoco.github.io/categories/#HTTP)

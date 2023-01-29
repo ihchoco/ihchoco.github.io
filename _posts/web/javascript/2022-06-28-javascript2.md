@@ -8,6 +8,8 @@ author_profile: false
 sidebar:
     nav: "docs"
 search: true
+sidebar:
+    nav: "counts"
 ---
 
 ### 자바스크립트 현업 작성 방식

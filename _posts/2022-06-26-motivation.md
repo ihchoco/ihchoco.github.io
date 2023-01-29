@@ -9,6 +9,8 @@ toc_label: 목 차
 author_profile: false
 search: true
 author_profil: false
+sidebar:
+    nav: "counts"
 ---
 
 ##### 영화장면

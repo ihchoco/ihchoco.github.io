@@ -8,6 +8,8 @@ author_profile: false
 sidebar:
     nav: "docs"
 search: true
+sidebar:
+    nav: "counts"
 ---
 
 ### 자바스크립트 개념 정리(더글라스 크락포드)
