@@ -1,6 +1,6 @@
 ---
 layout: single
-title : "[JAVA] 깃허브 레퍼지토리 생성 및 스프링부트 기초세팅 "
+title : "[SPRING] 깃허브 레퍼지토리 생성 및 스프링부트 기초세팅 "
 categories: [spring]
 tag: [java, spring]
 toc : true
