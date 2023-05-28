@@ -1,0 +1,22 @@
+<b style="color:red"></b>
+
+<b style="color:aquamarine"></b>
+
+<b style="color:cornflowerblue"></b>
+
+<b style="color:deeppink"></b>
+
+<b style="color:dodgerblue"></b>
+
+<b style="color:lightgreen"></b>
+
+<b style="color:mediumspringgreen"></b>
+
+<b style="color:royalblue"></b>
+
+<u></u>
+
+<b style="text-decoration: line-through;"></b>
+
+
+![img2](../../../images/posts/java/spring/aws-spring01/13.png)
