@@ -642,6 +642,945 @@ public class OrderServiceTest {
 
 ![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/18.png)
 
+<br>
+<br>
+
+### 3장. 스프링 핵심 원리 이해 - 객체 지향 원리 적용
+#### 3-1장. 새로운 할인 정책 개발
+
+<b style="color:lightgreen">기존에 만들었던 정액 할인(FixDiscountPolicy)에서 기획자가 정률 할인(RateDiscountPolicy)로 정책 변경</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/19.png)
+
+
+<b style="color:deeppink">VIP 회원일 경우 금액의 10% 할인 제공</b>
+
+discount 패키지에 RateDiscountPolicy 클래스 파일 생성
+
+```java
+package hello.core.discount;
+
+import hello.core.member.Grade;
+import hello.core.member.Member;
+
+public class RateDiscountPolicy implements DiscountPolicy{
+
+    private final int discountRate = 10;
+    @Override
+    public int discount(Member member, int price) {
+        if(member.getGrade() == Grade.VIP){
+            return price * discountRate / 100;
+        }else{
+            return 0;
+        }
+    }
+}
+```
+
+<b style="color:lightgreen">[핵심 단축키] 메소드 클릭 후 테스트 코드 만들기 : Command+Shift+t</b>
+
+메소드 명 마우스 클릭 후 Command + Shift + t 누르면 자동으로 테스트 코드 생성 가능(엄청 편리함)
+
+test > hello.core.discount 패키지에 RateDiscountPolicyTest 클래스 파일 생성
+
+```java
+package hello.core.discount;
+
+import hello.core.member.Grade;
+import hello.core.member.Member;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class RateDiscountPolicyTest {
+
+    DiscountPolicy discountPolicy = new RateDiscountPolicy();
+
+    @Test
+    @DisplayName("VIP는 20% 할인이 적용되어야 한다")
+    public void discount_테스트(){
+        //given
+        Member member
+                 = new Member(1L, "memberVIP", Grade.VIP);
+        //when
+        int discount = discountPolicy.discount(member, 10000);
+        //then
+        Assertions.assertThat(discount).isEqualTo(1000);
+    }
+
+    @Test
+    @DisplayName("VIP가 아니라면 할인이 적용되지 않아야 한다")
+    public void discount_no_테스트(){
+        //given
+        Member member
+                = new Member(2L, "memberBASIC", Grade.BASIC);
+        //when
+        int discount = discountPolicy.discount(member, 10000);
+        //then
+        Assertions.assertThat(discount).isEqualTo(0);
+    }
+}
+```
+
+<b style="color:cornflowerblue">이렇게 하면 테스트가 정상적으로 돌아가는것을 확인 할 수 있다
+<br>
+(설계가 잘 되어 있어 할인 테스트만 할때 다른 부분 건드리지 않고 독립적으로 가능)</b>
+
+테스트 주의사항 : 되는것 뿐만 아니라 실패하는 부분도 꼭 같이 테스트를 해야한다(특히 금액관련은 중요함)
+
+<br>
+
+#### 3-2장. 새로운 할인 정책 적용과 문제점
+
+이번에는 OrderServiceImpl 클래스 파일을 아래와 같이 변경
+
+```java
+    // private final DiscountPolicy discountPolicy = new FixDiscountPolicy();
+    private fianl DiscountPolicy discountPolicy = new RateDiscountPolicy();
+```
+
+이렇게 해도 훌륭하지만 문제점을 발견(변경이 될 때 OrderServiceImpl도 변경이 필요함) 
+
+<b style="color:mediumspringgreen">DIP / OCP 위반</b>
+
+<b style="color:cornflowerblue">위 경우는 예로 내가 운전면허증을 가지고 있고 자동차를 K3 타다가 테슬라로 변경을 하였는데, 기존 라이센스로는 안되고 새로운 라이센스를 발급받아야 하는 상황(그렇기 때문에 잘못되었음. 운전면허증만 있으면 K3, 테슬라 모두 탈수 있어야지)</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/20.png)
+
+그럼 위반하지 않도록 아래처럼 클래스를 수정해보자(OrderServiceImpl 클래스)
+
+```java
+package hello.core.order;
+
+import hello.core.discount.DiscountPolicy;
+import hello.core.discount.FixDiscountPolicy;
+import hello.core.discount.RateDiscountPolicy;
+import hello.core.member.Member;
+import hello.core.member.MemberRepository;
+import hello.core.member.MemoryMemberRepository;
+
+public class OrderServiceImpl implements OrderService{
+
+    private final MemberRepository memberRepository = new MemoryMemberRepository();
+
+    /* 이렇게 하면 DIP, OCP 위반이기 때문에 아래와 같이 코드를 수정*/
+    // private final DiscountPolicy discountPolicy = new FixDiscountPolicy();
+    // private final DiscountPolicy discountPolicy = new RateDiscountPolicy();
+
+    private DiscountPolicy discountPolicy; //이 부분 수정
+
+    @Override
+    public Order createOrder(Long memberId, String itemName, int itemPrice) {
+        Member member = memberRepository.findById(memberId);
+        int discountPrice = discountPolicy.discount(member, itemPrice);
+
+        return new Order(memberId, itemName, itemPrice, discountPrice);
+    }
+}
+```
+
+근데 이렇게만 실행하면 NullpointerException 발생
+
+<b style="color:aquamarine">이 문제를 해결하려면 누군가 클라이언트인 OrderServiceImpl에 DiscountPolicy의 구현객체를 넣어주어야 한다</b>
+
+<br>
+
+#### 3-3장. 관심사의 분리
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/21.png)
+
+디카프리오가 로미오 역할을 수행하는데 줄리엣 역할로 내가 원하는 사람을 배역으로 지정하지 않는다.
+
+<b style="color:aquamarine">보통 공연기획자가 로미오는 디카프리오, 줄리엣은 케이트윈슬렛 배역을 지정(개발도 마찬가지)</b>
+
+위 경우는 디카프리오가 줄리엣 역할을 직접 지정하는 경우였는데, 잘못되었음
+
+<b style="color:cornflowerblue">관심사를 분리하자(공연 기획자를 만들고, 배우와 공연 기획자의 책임을 확실히 분리하자)</b>
+
+hello.core 패키지 아래에 AppConfig 클래스 파일 생성
+
+```java
+package hello.core;
+
+import hello.core.member.MemberService;
+import hello.core.member.MemberServiceImpl;
+import hello.core.member.MemoryMemberRepository;
+
+public class AppConfig {
+    /* 애플리케이션 환경 설정은 모두 여기서 한다(MemberServiceImpl / OrderServiceImpl) */
+    
+    // 1. MemberService에 주입하려는 구현체를 여기서 먼저 작성
+    public MemberService memberService(){ 
+        
+        //4. 여기서 객체를 생성하면서 MemoryMemberRepository()를 주입
+        return new MemberServiceImpl(new MemoryMemberRepository()); 
+    }
+}
+```
+
+기존에 만들었던 MemberServiceImpl 클래스 파일 수정
+```java
+package hello.core.member;
+
+public class MemberServiceImpl implements MemberService{
+
+    // 2. 기존에 ServiceImpl에서 구현체에 의존했던것을 주석처리
+    // private MemberRepository memberRepository = new MemoryMemberRepository();
+    private final MemberRepository memberRepository;
+
+    // 3. 여기서 MemberServiceImpl 생성자를 만들어서 객체 생성시 의존성 주입받도록 만들기 
+    public MemberServiceImpl(MemberRepository memberRepository) {
+        this.memberRepository = memberRepository;
+    }
+
+    @Override
+    public void join(Member member) {
+        memberRepository.save(member);
+    }
+
+    @Override
+    public Member findMember(Long memberId) {
+        return memberRepository.findById(memberId);
+    }
+}
+```
+
+<b style="color:aquamarine">
+여기서 MemberServiceImpl에 보면 MemoryMemberRepository에 대한 내용이 없음
+</b>
+
+인터페이스인 MemberRepository에만 100% 의존하면서(추상화에만 의존), OCP/DIP 원칙을 잘 지키고 있음
+
+
+<b style="color:deeppink">이 방식을 '생성자를 통해서 의존성을 주입한다(생성자 주입)'라고 한다</b>
+
+아래 OrderServiceImpl 클래스 파일 에도 똑같이 반영해주자
+
+```java
+package hello.core.order;
+
+import hello.core.discount.DiscountPolicy;
+import hello.core.discount.FixDiscountPolicy;
+import hello.core.discount.RateDiscountPolicy;
+import hello.core.member.Member;
+import hello.core.member.MemberRepository;
+import hello.core.member.MemoryMemberRepository;
+
+public class OrderServiceImpl implements OrderService{
+
+
+    /* 이렇게 하면 DIP, OCP 위반이기 때문에 아래와 같이 코드를 수정*/
+    // private final MemberRepository memberRepository = new MemoryMemberRepository();
+    
+    // private final DiscountPolicy discountPolicy = new FixDiscountPolicy();
+    // private final DiscountPolicy discountPolicy = new RateDiscountPolicy();
+    /* ======================================================================== */
+    
+    private final MemberRepository memberRepository;
+    private final DiscountPolicy discountPolicy;
+
+    public OrderServiceImpl(MemberRepository memberRepository, DiscountPolicy discountPolicy) {
+        this.memberRepository = memberRepository;
+        this.discountPolicy = discountPolicy;
+    }
+
+    @Override
+    public Order createOrder(Long memberId, String itemName, int itemPrice) {
+        Member member = memberRepository.findById(memberId);
+        int discountPrice = discountPolicy.discount(member, itemPrice);
+
+        return new Order(memberId, itemName, itemPrice, discountPrice);
+    }
+}
+```
+
+AppConfig 클래스 파일도 아래와 같이 수정
+
+```java
+package hello.core;
+
+import hello.core.discount.FixDiscountPolicy;
+import hello.core.member.MemberService;
+import hello.core.member.MemberServiceImpl;
+import hello.core.member.MemoryMemberRepository;
+import hello.core.order.OrderService;
+import hello.core.order.OrderServiceImpl;
+
+public class AppConfig {
+    /* 애플리케이션 환경 설정은 모두 여기서 한다(MemberServiceImpl / OrderServiceImpl) */
+
+    // 1. MemberService에 주입하려는 구현체를 여기서 먼저 작성
+    public MemberService memberService(){
+
+        //4. 여기서 객체를 생성하면서 MemoryMemberRepository()를 주입
+        return new MemberServiceImpl(new MemoryMemberRepository());
+    }
+
+    public OrderService orderService(){
+        return new OrderServiceImpl(
+            new MemoryMemberRepository(), 
+            new FixDiscountPolicy()
+        );
+    }
+}
+```
+
+이렇게 하면 OrderServiceImpl의 경우에도 완전히 추상화에만 의존하고 있지 구체화에 의존하고 있지 않음
+
+<b style="color:aquamarine">DIP / OCP를 철저하게 준수(OrderServiceImpl 코드만 봐서는 FixDiscount가 올지, RateDiscount가 올지 모름)</b>
+
+<b style="color:mediumspringgreen">TIP : 파이널로 되어 있으면 기본으로 할당하거나 생성자로 할당이 되어야 한다</b>
+
+<b style="color:lightgreen">[핵심 단축키] 클래스 목록 선택 : Command + e </b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/22.png)
+
+
+<b style="color:aquamarine">생성자 주입(Injection) : 반복하는 이유는 그만큼 중요하기 때문</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/23.png)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/24.png)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/25.png)
+
+<b style="color:aquamarine">
+
+memberServiceImpl입장에서는 의존 관계를 마치 외부에서 주입해주는 것 같다(의존관계 주입)
+
+DI(Dependency Injection) : 의존관계 주입
+
+</b>
+
+OrderServiceImpl, MemberServiceImpl은 이제 본연의 역할에만 충실히 하면 된다
+
+[THINK] : OrderServiceImpl에서 Member 값을 찾아와야 할 때 MemberService를 사용하는게 아니라 MemberRepository를 사용하고 있음
+
+<b style="color:aquamarine">Service에서 다른 Service를 의존하는게 아니라 다른 Repository를 의존하도록 구현</b>
+
+이제 테스트를 하려면 MemberApp 클래스 파일을 수정하자
+
+[기존 방식]
+```java
+public class MemberApp {
+    public static void main(String[] args) {
+        MemberService memberService = new MemberServiceImpl();
+        Member member = new Member(1L, "memberA", Grade.VIP);
+
+        memberService.join(member);
+        Member findMember = memberService.findMember(1L);
+        System.out.println("new member: "+member.getName());
+        System.out.println("find member : "+findMember.getName());
+
+    }
+}
+```
+
+[새로운 방식]
+```java
+public class MemberApp {
+    public static void main(String[] args) {
+        AppConfig appConfig = new AppConfig();
+        
+        // MemberService memberService = new MemberServiceImpl();
+        MemberService memberService = appConfig.memberService();
+        
+        Member member = new Member(1L, "memberA", Grade.VIP);
+
+        memberService.join(member);
+        Member findMember = memberService.findMember(1L);
+        System.out.println("new member: "+member.getName());
+        System.out.println("find member : "+findMember.getName());
+
+    }
+}
+```
+
+기존에 만들었던 OrderApp 클래스 파일도 수정해주자
+
+[기존 방식]
+```java
+public class OrderApp {
+    public static void main(String[] args) {
+
+        MemberService memberService = new MemberServiceImpl();
+        OrderService orderService = new OrderServiceImpl();
+
+        Long memberId = 1L;
+        Member member = new Member(memberId, "memberA", Grade.VIP);
+        memberService.join(member);
+
+        Order order = orderService.createOrder(memberId, "itemA", 10000);
+
+        System.out.println("Order = "+order);
+        System.out.println("Order.calculate() = "+order.calculatePrice());
+    }
+}
+```
+
+[새로운 방식]
+```java
+public class OrderApp {
+    public static void main(String[] args) {
+        AppConfig appConfig = new AppConfig();
+        MemberService memberService = appConfig.memberService();
+        OrderService orderService = appConfig.orderService();
+
+        Long memberId = 1L;
+        Member member = new Member(memberId, "memberA", Grade.VIP);
+        memberService.join(member);
+
+        Order order = orderService.createOrder(memberId, "itemA", 10000);
+
+        System.out.println("Order = "+order);
+        System.out.println("Order.calculate() = "+order.calculatePrice());
+    }
+}
+```
+
+테스트 코드도 수정이 필요함
+
+MemberServiceTest 클래스 파일 수정
+
+[기존 방식]
+```java
+public class MemberServiceTest {
+
+    MemberService memberService = new MemberServiceImpl();
+
+    @Test
+    void join(){
+        //given
+        Member member = new Member(1L, "MemberA", Grade.VIP);
+
+        //when
+        memberService.join(member);
+        Member findMember = memberService.findMember(1L);
+
+        //then
+        Assertions.assertThat(member).isEqualTo(findMember);
+    }
+}
+```
+
+[새로운 방식]
+```java
+public class MemberServiceTest {
+
+    MemberService memberService;
+
+    @BeforeEach //테스트 실행 전에 돌아가도록 하는 어노테이션
+    public void beforeEach(){
+        AppConfig appConfig = new AppConfig();
+        memberService = appConfig.memberService();
+    }
+
+    @Test
+    void join(){
+        //given
+        Member member = new Member(1L, "MemberA", Grade.VIP);
+
+        //when
+        memberService.join(member);
+        Member findMember = memberService.findMember(1L);
+
+        //then
+        Assertions.assertThat(member).isEqualTo(findMember);
+    }
+}
+```
+
+OrderServiceTest 클래스 파일도 같이 수정
+
+[기존 방식]
+```java
+public class OrderServiceTest {
+
+    MemberService memberService = new MemberServiceImpl();
+    OrderService orderService = new OrderServiceImpl();
+
+    @Test
+    void createOrder(){
+        Long memberId = 1L;
+        //primitive에는 null이 들어가지 않기 때문에 wrapper 클래스를 사용
+
+        Member member = new Member(memberId, "memberA", Grade.VIP);
+        memberService.join(member);
+
+        Order order = orderService.createOrder(memberId, "itemA", 10000);
+        Assertions.assertThat(order.getDiscountPrice()).isEqualTo(2000);
+        Assertions.assertThat(order.calculatePrice()).isEqualTo(8000);
+    }
+}
+```
+
+[새로운 방식]
+```java
+public class OrderServiceTest {
+
+    MemberService memberService;
+    OrderService orderService;
+    
+    @BeforeEach
+    public void beforeEach(){
+        AppConfig appConfig = new AppConfig();
+        memberService = appConfig.memberService();
+        orderService = appConfig.orderService();
+    }
+
+    @Test
+    void createOrder(){
+        Long memberId = 1L;
+        //primitive에는 null이 들어가지 않기 때문에 wrapper 클래스를 사용
+
+        Member member = new Member(memberId, "memberA", Grade.VIP);
+        memberService.join(member);
+
+        Order order = orderService.createOrder(memberId, "itemA", 10000);
+        Assertions.assertThat(order.getDiscountPrice()).isEqualTo(2000);
+        Assertions.assertThat(order.calculatePrice()).isEqualTo(8000);
+    }
+}
+```
+<b style="color:aquamarine">
+이번장에서 AppConfig를 통해서 관심사를 완벽하게 분리했다
+
+<br>
+배역, 배우를 생각해보자(AppConfig는 공연 기획자다)
+
+AppConfig는 구체 클래스를 선택한다. 배역에 맞는 담당 배우를 선택한다
+
+이제 각 배우들은 담당 기능을 실행하는 책임만 지면 된다(상대 배역 선택 X)
+
+</b>
+
+<br>
+
+#### 3-4장. AppConfig 리팩토링
+
+
+<b style="color:dodgerblue">역할과 구현을 분리해서 한 그림에 보고 싶은데 현재 AppConfig에는 그런게 없다(역할을 드러나게 표현해주는 작업 진행)</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/26.png)
+
+[기존 AppConfig 방식]
+```java
+public class AppConfig {
+    /* 애플리케이션 환경 설정은 모두 여기서 한다(MemberServiceImpl / OrderServiceImpl) */
+
+    // 1. MemberService에 주입하려는 구현체를 여기서 먼저 작성
+    public MemberService memberService(){
+
+        //4. 여기서 객체를 생성하면서 MemoryMemberRepository()를 주입
+        return new MemberServiceImpl(new MemoryMemberRepository());
+    }
+
+    public OrderService orderService(){
+        return new OrderServiceImpl(
+                new MemoryMemberRepository(),
+                new FixDiscountPolicy()
+        );
+    }
+}
+```
+[리펙토링 AppConfig 방식]
+```java
+public class AppConfig {
+    /* 애플리케이션 환경 설정은 모두 여기서 한다(MemberServiceImpl / OrderServiceImpl) */
+
+    public MemberService memberService(){
+        return new MemberServiceImpl(memberRepository());
+    }
+
+    //memberService가 있고 memberRepository도 추가로 만들어줘서 메소드 호출 형태로 리팩토링
+    private MemberRepository memberRepository(){
+        return new MemoryMemberRepository();
+    }
+
+    public OrderService orderService(){
+        return new OrderServiceImpl( memberRepository(), discountPolicy() );
+    }
+
+    public DiscountPolicy discountPolicy(){
+        return new FixDiscountPolicy();
+    }
+}
+```
+
+이렇게 하면 장점
+ 1. 만약에 MemoryRepository가 변경이 되면 기존 코드에서는 2번 변경을 해주어야 한다
+ 2. 하지만 새로운 리팩토링 코드에서는 메소드 호출방식으로 1번만 변경하면 된다(만약 100개였다면 끔찍)
+ ```java
+    public MemberService memberService(){
+        return new MemberServiceImpl(memberRepository());
+    }
+
+    public MemberRepository memberRepository(){
+        return new MemoryMemberRepository();
+    }
+    // new MemberServiceImpl(new MemoryMemberRepository())
+    // => new MemberServiceImpl(memberRepository())
+    // 이렇게 하면 가독성도 더 훌륭해지면서 변경되는 코드의 양도 최소화 가능
+ ```
+ 3. AppConfig를 보면 역할과 구현 클래스가 한눈에 들어온다(애플리케이션 전체 구성을 빠르게 파악 가능)
+
+<br>
+
+#### 3-5장. 새로운 구조와 할인 정책 적용
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/27.png)
+
+새로운 정책(정액 > 정률)로 변경 작업 진행
+
+아주 간단하게 변경 가능(단순하게 AppConfig 클래스만 변경해주면 된다 - 사용영역은 그대로 놔두면 된다)
+
+이렇게 될 수 있었던 이유는 <b style="color:lightgreen">사용 영역과 구성 영역이 완전히 분리되었기 때문이다</b>
+
+[기존 AppConfig - FixDiscountPolicy적용]
+```java
+public class AppConfig {
+    ...
+    public OrderService orderService(){
+        return new OrderServiceImpl( memberRepository(), discountPolicy() );
+    }
+
+    public DiscountPolicy discountPolicy(){
+        return new FixDiscountPolicy();
+    }
+}
+```
+
+
+[새로운 AppConfig  - RateDiscountPolicy적용]
+```java
+public class AppConfig {
+    ...
+    public OrderService orderService(){
+        return new OrderServiceImpl( memberRepository(), discountPolicy() );
+    }
+
+    public DiscountPolicy discountPolicy(){
+        //return new FixDiscountPolicy();
+        return new RateDiscountPolicy();
+    }
+}
+```
+
+
+<b style="color:cornflowerblue">AppConfig는 공연기획자라고 생각
+<br>
+이렇게 변경 해주면 DIP, OCP 모두 만족시키면서 클라이언트 코드(xxxServiceImpl)를 변경할 필요가 없다</b>
+
+
+#### 3-6장. 전체 흐름 정리
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/28.png)
+
+<br>
+
+#### 3-7장. 좋은 객체 지향 설계의 5가지 원칙의 적용
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/29.png)
+
+<b style="color:aquamarine">
+구현 객체를 생성하고 연결하는 책임은 AppConfig가 담당
+
+(기존에는 클라이언트에서 직접 객체를 생성하고, 연결하고, 실행하는 다양한 책임을 가지고 있었음)
+</b>
+
+<br>
+
+#### 3-8장. IoC, DI, 그리고 컨테이너
+
+IoC(Inversion Of Control) 제어의 역전
+
+<b style="color:aquamarine">내가 뭔가 호출하는게 아니라 프레임워크가 내 코드를 대신 호출해주는것</b>
+
+
+<b style="color:cornflowerblue">기존 방식(MemberServiceImpl에서 MemberRepository를 생성하고.. 직접 개발자가 코드를 작성해서 호출)
+
+IoC 방식(반면에 AppConfig가 등장하고 나서는 흐름 자체가 클라이언트쪽이 아니라 AppConfig쪽으로 가져간다)
+
+AppConfig는 OrderServiceImpl이 아닌 다른 구현체를 만들수도 있는데, 클라이언트는 그런상황은 모르고 원래 주어진 책임만 열심히 수행한다
+</b>
+
+JUnit은 프레임워크이다(Test코드 실행하면 @BeforeEach와 같은 어노테이션을 테스트 프레임워크가 알아서 실행시켜준다)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/30.png)
+
+[중요]
+ 
+1. 정적인 클래스 의존관계(단순하게 클래스를 보고 이게 어떤 클래스와 의존관계가 있는지 판단 가능)
+```java
+public class OrderServiceImpl implements OrderService{
+
+    private final MemberRepository memberRepository;
+    private final DiscountPolicy discountPolicy;
+
+    public OrderServiceImpl(MemberRepository memberRepository, DiscountPolicy discountPolicy) {
+        this.memberRepository = memberRepository;
+        this.discountPolicy = discountPolicy;
+    }
+    ...
+}
+```
+ 위에 보면 OrderServiceImpl은 MemberRepository, DiscountPolicy를 의존하고 있구나 라는것을 알 수 있다
+ 
+ (ex. 클래스 다이어그램)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/31.png)
+
+2. 동적 클래스 관계(객체 다이어그램)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/32.png)
+
+IoC 컨테이너, DI 컨테이너
+
+의존관계 역전을 일으킨다고 해서 AppConfig를 IoC 컨테이너, DI 컨테이너라고도 한다
+
+보통 <b style="color:aquamarine">AppConfig를 의존성 주입을 대신 해주기 때문에 DI 컨테이너라고</b> 한다
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/33.png)
+
+스프링이 보통 DI 컨테이너 역할을 수행한다.
+
+<b style="color:mediumspringgreen">[지금까지 순수 자바를 사용하여 프로젝트 구성을 하였고 이제 지금까지 했던 내용을 스프링으로 전환하는 작업 진행]</b>
+
+#### 3-9장. 스프링으로 전환하기
+
+스프링이 얼마나 대단한지 한번 봐보자
+
+AppConfig를 먼저 스프링으로 변경해보자
+[기존 Java 방식 - AppConfig]
+```java
+public class AppConfig {
+
+    public MemberService memberService(){
+        return new MemberServiceImpl(memberRepository());
+    }
+
+    public MemberRepository memberRepository(){
+        return new MemoryMemberRepository();
+    }
+
+    public OrderService orderService(){
+        return new OrderServiceImpl( memberRepository(), discountPolicy() );
+    }
+
+    public DiscountPolicy discountPolicy(){
+//        return new FixDiscountPolicy();
+        return new RateDiscountPolicy();
+    }
+}
+```
+
+[AppConfig 클래스 파일을 스프링 방식으로 변경]
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration //스프링에서는 설정정보를 @Configuration 어노테이션 추가해주어야 한다 
+public class AppConfig {
+
+    @Bean //@Bean을 추가해주면 이게 모두 스프링 컨테이너라는곳에 자동으로 등록이 된다
+    public MemberService memberService(){
+        return new MemberServiceImpl(memberRepository());
+    }
+
+    @Bean
+    public MemberRepository memberRepository(){
+        return new MemoryMemberRepository();
+    }
+    @Bean
+    public OrderService orderService(){
+        return new OrderServiceImpl( memberRepository(), discountPolicy() );
+    }
+    @Bean
+    public DiscountPolicy discountPolicy(){
+//        return new FixDiscountPolicy();
+        return new RateDiscountPolicy();
+    }
+}
+```
+
+MemberApp 클래스 파일도 스프링으로 변경해보자
+
+[기존 Java - MemberApp 클래스]
+
+```java
+public class MemberApp {
+    public static void main(String[] args) {
+        AppConfig appConfig = new AppConfig();
+
+//        MemberService memberService = new MemberServiceImpl();
+        MemberService memberService = appConfig.memberService();
+
+
+        Member member = new Member(1L, "memberA", Grade.VIP);
+
+        memberService.join(member);
+        Member findMember = memberService.findMember(1L);
+        System.out.println("new member: "+member.getName());
+        System.out.println("find member : "+findMember.getName());
+
+    }
+}
+```
+
+[새로운 Spring 방식 - MemberApp 클래스]
+```java
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class MemberApp {
+    public static void main(String[] args) {
+        // AppConfig appConfig = new AppConfig();
+        // MemberService memberService = appConfig.memberService();
+
+        ApplicationContext applicationContext =
+                new AnnotationConfigApplicationContext(AppConfig.class);
+
+        MemberService memberService = 
+                applicationContext.getBean("memberService", MemberService.class);
+
+
+
+        Member member = new Member(1L, "memberA", Grade.VIP);
+
+        memberService.join(member);
+        Member findMember = memberService.findMember(1L);
+        System.out.println("new member: "+member.getName());
+        System.out.println("find member : "+findMember.getName());
+
+    }
+}
+```
+
+스프링 생성 방법(스프링은 모두 ApplicationContext로 시작한다)
+
+1. Configuration을 가져오려면 new AnnotationConfigApplicationContext(AppConfig.class) 작성
+2. 이렇게 하면 @Bean 등록된 객체들을 생성된 applicationContext를 사용해서 가져올 수 있다
+3. applicationContext.getBean("memberService", MemberService.class);
+<b style="color:aquamarine"> 
+4. Bean 이름은 AppConfig파일에 메소드명(memberService)이 Bean등록될 때 객체 이름으로 자동 등록이 된다</b>
+```java
+    @Bean //@Bean을 추가해주면 이게 모두 스프링 컨테이너라는곳에 자동으로 등록이 된다
+    public MemberService memberService(){ //memberService가 bean이름으로 자동 등록
+        return new MemberServiceImpl(memberRepository());
+    }
+```
+5. applicationContext.getBean("Bean이름", Bean타입)
+
+</b>
+
+이렇게 하고 실행을 해보면 아래처럼 콘솔창에 Bean들이 자동으로 등록되고 테스트 결과도 정상적으로 수행되는 것을 확인 할 수 있다
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/34.png)
+
+<br>
+
+OrderApp 클래스 파일도 스프링으로 변경해보자
+
+[기존 Java - OrderApp 클래스]
+
+```java
+public class OrderApp {
+    public static void main(String[] args) {
+        AppConfig appConfig = new AppConfig();
+        MemberService memberService = appConfig.memberService();
+        OrderService orderService = appConfig.orderService();
+
+
+        Long memberId = 1L;
+        Member member = new Member(memberId, "memberA", Grade.VIP);
+        memberService.join(member);
+
+        Order order = orderService.createOrder(memberId, "itemA", 10000);
+
+        System.out.println("Order = "+order);
+        System.out.println("Order.calculate() = "+order.calculatePrice());
+    }
+}
+```
+
+[새로운 Spring 방식 - OrderApp 클래스]
+
+```java
+public class OrderApp {
+    public static void main(String[] args) {
+        // AppConfig appConfig = new AppConfig();
+        ApplicationContext applicationContext = 
+                new AnnotationConfigApplicationContext(AppConfig.class);
+
+        // MemberService memberService = appConfig.memberService();
+        MemberService memberService = 
+                applicationContext.getBean("memberService", MemberService.class);
+
+        // OrderService orderService = appConfig.orderService();
+        OrderService orderService = 
+                applicationContext.getBean("orderService", OrderService.class);
+
+
+
+        Long memberId = 1L;
+        Member member = new Member(memberId, "memberA", Grade.VIP);
+        memberService.join(member);
+
+        Order order = orderService.createOrder(memberId, "itemA", 10000);
+
+        System.out.println("Order = "+order);
+        System.out.println("Order.calculate() = "+order.calculatePrice());
+    }
+}
+```
+
+기존에는 AppConfig를 이용해서 직접 객체를 생성하고 DI를 했지만
+```java
+    public static void main(String[] args) {
+        AppConfig appConfig = new AppConfig();
+        MemberService memberService = appConfig.memberService();
+        OrderService orderService = appConfig.orderService();
+        ...
+    }
+```
+이제부터는 스프링 컨테이너를 통해서 사용한다
+```java
+    public static void main(String[] args) {
+        ApplicationContext applicationContext = 
+                new AnnotationConfigApplicationContext(AppConfig.class);
+
+        MemberService memberService = 
+                applicationContext.getBean("memberService", MemberService.class);
+
+        OrderService orderService = 
+                applicationContext.getBean("orderService", OrderService.class);
+        ...
+    }
+```
+
+<b style="color:aquamarine">@Configuration이 붙은 모든 클래스를 구성 정보로 사용 자동 등록</b>
+
+@Bean이 붙은 모든 메서드를 모두 호출해서 반환된 객체를 스프링 컨테이너에 등록한다(등록된 객체를 스프링 빈이라 부른다)
+
+<b style="color:mediumspringgreen">기존에는 개발자가 직접 자바코드로 모든 것을 변경했지만, 이제부터는 스프링 컨테이너에 객체를 스프링 빈으로 등록하고, 스프링 컨테이너에서 스프링 빈을 찾아서 사용하도록 변경되었다</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/35.png)
+
+
+아니 코드가 더 복잡해지는데 이게 무슨 장점이 있는거야?
+
+결론 : 어마어마한 장점이 있다(진짜 어마어마함)
+
+<br>
+<br>
+
+### 4장. 스프링 컨테이너와 스프링 빈
+#### 4-1장. 스프링 컨테이너 생성
+
+
+
 
 
 참고  
