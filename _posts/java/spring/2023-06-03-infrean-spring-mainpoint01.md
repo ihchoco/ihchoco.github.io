@@ -947,12 +947,10 @@ public class AppConfig {
 ![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/25.png)
 
 <b style="color:aquamarine">
-
 memberServiceImpl입장에서는 의존 관계를 마치 외부에서 주입해주는 것 같다(의존관계 주입)
+</b>
 
 DI(Dependency Injection) : 의존관계 주입
-
-</b>
 
 OrderServiceImpl, MemberServiceImpl은 이제 본연의 역할에만 충실히 하면 된다
 
@@ -1147,7 +1145,6 @@ public class OrderServiceTest {
 <b style="color:aquamarine">
 이번장에서 AppConfig를 통해서 관심사를 완벽하게 분리했다
 
-<br>
 배역, 배우를 생각해보자(AppConfig는 공연 기획자다)
 
 AppConfig는 구체 클래스를 선택한다. 배역에 맞는 담당 배우를 선택한다
@@ -1286,9 +1283,10 @@ public class AppConfig {
 
 <b style="color:aquamarine">
 구현 객체를 생성하고 연결하는 책임은 AppConfig가 담당
+</b>
 
 (기존에는 클라이언트에서 직접 객체를 생성하고, 연결하고, 실행하는 다양한 책임을 가지고 있었음)
-</b>
+
 
 <br>
 
@@ -1299,12 +1297,12 @@ IoC(Inversion Of Control) 제어의 역전
 <b style="color:aquamarine">내가 뭔가 호출하는게 아니라 프레임워크가 내 코드를 대신 호출해주는것</b>
 
 
-<b style="color:cornflowerblue">기존 방식(MemberServiceImpl에서 MemberRepository를 생성하고.. 직접 개발자가 코드를 작성해서 호출)
+<b style="color:cornflowerblue">기존 방식(MemberServiceImpl에서 MemberRepository를 생성하고.. 직접 개발자가 코드를 작성해서 호출)</b>
 
 IoC 방식(반면에 AppConfig가 등장하고 나서는 흐름 자체가 클라이언트쪽이 아니라 AppConfig쪽으로 가져간다)
 
 AppConfig는 OrderServiceImpl이 아닌 다른 구현체를 만들수도 있는데, 클라이언트는 그런상황은 모르고 원래 주어진 책임만 열심히 수행한다
-</b>
+
 
 JUnit은 프레임워크이다(Test코드 실행하면 @BeforeEach와 같은 어노테이션을 테스트 프레임워크가 알아서 실행시켜준다)
 
@@ -1465,6 +1463,7 @@ public class MemberApp {
 3. applicationContext.getBean("memberService", MemberService.class);
 <b style="color:aquamarine"> 
 4. Bean 이름은 AppConfig파일에 메소드명(memberService)이 Bean등록될 때 객체 이름으로 자동 등록이 된다</b>
+   
 ```java
     @Bean //@Bean을 추가해주면 이게 모두 스프링 컨테이너라는곳에 자동으로 등록이 된다
     public MemberService memberService(){ //memberService가 bean이름으로 자동 등록
@@ -1473,7 +1472,7 @@ public class MemberApp {
 ```
 5. applicationContext.getBean("Bean이름", Bean타입)
 
-</b>
+
 
 이렇게 하고 실행을 해보면 아래처럼 콘솔창에 Bean들이 자동으로 등록되고 테스트 결과도 정상적으로 수행되는 것을 확인 할 수 있다
 
