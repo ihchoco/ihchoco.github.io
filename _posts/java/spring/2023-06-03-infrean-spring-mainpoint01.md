@@ -1833,12 +1833,177 @@ public class ApplicationContextBasicFindTest {
 
 일단 위 코드는 참고만 하자
 
+#### 4-4장. 스프링 빈 조회 - 동일한 타입이 둘 이상
+
+중복 에러 발생
+
+test > hello.core > beanfind > ApplicationContextSameBeanFindTest 클래스 파일 생성
+
+```java
+package hello.core.beanfind;
+
+import hello.core.AppConfig;
+import hello.core.member.MemberRepository;
+import hello.core.member.MemoryMemberRepository;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
+
+public class ApplicationContextSameBeanFindTest {
+    //이번에는 중복을 테스트 하려고 하는데 만약 AppConfig를 이용하게 되면 AppConfig 소스를 변경해야해서 이번에는 static클래스를 만들어서 테스트 진행하자
+    ApplicationContext ac
+            = new AnnotationConfigApplicationContext(SameBeanConfig.class);
+
+    @Test
+    @DisplayName("타입으로 조회시 같은 타입이 둘 이상 있으면, 중복 오류가 발생한다")
+    void findBeanByTypeDuplicate(){
+        //MemberRepository memberRepository = ac.getBean(MemberRepository.class);
+        //여기서 위에 코드를 실행하면 ac.getBean에서 MemberRepository.class가 현재 SameBeanConfig에 두개가 있기때문에 중복 오류가 발생한다
+
+        Assertions.assertThrows(NoUniqueBeanDefinitionException.class,
+                () -> ac.getBean(MemberRepository.class));
+    }
+
+    @Test
+    @DisplayName("타입으로 조회시 같은 타입이 둘 이상 있으면, 빈 이름을 지정하면 된다")
+    void findBeanByName(){
+        MemberRepository memberRepository = ac.getBean("memberRepository1", MemberRepository.class);
+        Assertions.assertThat(memberRepository).isInstanceOf(MemberRepository.class);
+    }
+
+    @Test
+    @DisplayName("특정 타입을 모두 조회하기")
+    void findAllBeanByType(){
+        Map<String, MemberRepository> beansOfType = ac.getBeansOfType(MemberRepository.class);
+        for(String key : beansOfType.keySet()){
+            System.out.println("key : "+key+" , value = "+beansOfType.get(key));
+        }
+        System.out.println("beansOfYpe = "+beansOfType);
+        Assertions.assertThat(beansOfType.size()).isEqualTo(2);
+    }
+
+    @Configuration
+    static class SameBeanConfig{
+        //static 쓰면 장점은 무엇인가? 클래스 안에다가 클래스를 썼다는건 이안에서만 쓰겠다는 뜻
+
+        @Bean
+        public MemberRepository memberRepository1(){
+            return new MemoryMemberRepository();
+        }
+
+        @Bean
+        public MemberRepository memberRepository2(){
+            return new MemoryMemberRepository();
+        }
+    }
+}
+```
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/46.png)
 
 
+#### 4-5장. 스프링 빈 조회 - 상속관계
+
+<b style="color:aquamarine">[핵심파트] 부모 타입으로 조회하면, 자식 타입도 함께 조회한다.</b>
+
+그래서 모든 자바 객체의 최고 부모인 Object 타입으로 조회하면, 모든 스프링 빈을 조회한다.
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/47.png)
 
 
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/48.png)
+
+```java
+package hello.core.beanfind;
+
+import hello.core.discount.DiscountPolicy;
+import hello.core.discount.FixDiscountPolicy;
+import hello.core.discount.RateDiscountPolicy;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
+
+public class ApplicationContextExtendsFindTest {
+
+    ApplicationContext ac
+             = new AnnotationConfigApplicationContext(TestConfig.class);
+
+    @Test
+    @DisplayName("부모 타입으로 조회시 자식이 둘 이상 있으면, 중복 오류가 발생한다")
+    void findBeanByParentTypeDuplicate(){
+//        DiscountPolicy bean = ac.getBean(DiscountPolicy.class);
+        Assertions.assertThrows(NoUniqueBeanDefinitionException.class, () -> ac.getBean(DiscountPolicy.class));
+    }
+
+    @Test
+    @DisplayName("부모 타입으로 조회시 자식이 둘 이상 있으면, 빈 이름을 지정하면 된다")
+    void findBeanByParentTypeBeanName(){
+        DiscountPolicy rateDiscountPolicy = ac.getBean("rateDiscountPolicy", DiscountPolicy.class);
+        org.assertj.core.api.Assertions.assertThat(rateDiscountPolicy).isInstanceOf(RateDiscountPolicy.class);
+    }
+
+    @Test
+    @DisplayName("특정 하위 타입으로 조회")
+    void findBeanBySubType(){
+        RateDiscountPolicy bean = ac.getBean(RateDiscountPolicy.class);
+        org.assertj.core.api.Assertions.assertThat(bean).isInstanceOf(RateDiscountPolicy.class);
+    }
 
 
+    @Test
+    @DisplayName("부모 타입으로 모두 조회하기")
+    void findAllBeanByParentType(){
+        Map<String, DiscountPolicy> beansOfType = ac.getBeansOfType(DiscountPolicy.class);
+        org.assertj.core.api.Assertions.assertThat(beansOfType.size()).isEqualTo(2);
+        for(String key : beansOfType.keySet()){
+            System.out.println("key = "+key+" value = "+beansOfType.get(key));
+        }
+    }
+
+
+    @Test
+    @DisplayName("부모 타입으로 모두 조회하기 - Object")
+    void findAllBeanByObjectType(){
+        Map<String, Object> beansOfType = ac.getBeansOfType(Object.class);
+        for(String key : beansOfType.keySet()){
+            System.out.println("key = "+key+" value = "+beansOfType.get(key));
+        }
+    }
+
+    @Configuration
+    static class TestConfig{
+        @Bean
+        public DiscountPolicy rateDiscountPolicy(){
+            return new RateDiscountPolicy();
+        }
+
+        @Bean
+        public DiscountPolicy fixDiscountPolicy(){
+            return new FixDiscountPolicy();
+        }
+    }
+}
+```
+
+사실 직접 ac를 써서 Bean을 조회할 일이 없다(개발할 때는 없음)
+
+하지만 굳이 설명을 한 이유는 아주 기본적인 개념이기도 하고, 가끔 Java Application에서 스프링컨테이너를 생성해서 사용할 때 쓰는경우도 있다
+
+<b style="color:aquamarine">부모 타입으로 조회시, 자식이 어디까지 조회가 되는지 알아야지 자동 주입에 대해서도 잘 이해할 수 있기 때문이다</b>
 
 참고  
  1. [스프링 핵심 원리 - 기본편 - 김영한](https://www.inflearn.com/course/%EC%8A%A4%ED%94%84%EB%A7%81-%ED%95%B5%EC%8B%AC-%EC%9B%90%EB%A6%AC-%EA%B8%B0%EB%B3%B8%ED%8E%B8/dashboard)
