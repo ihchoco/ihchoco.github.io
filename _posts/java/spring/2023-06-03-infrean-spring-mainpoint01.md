@@ -1579,6 +1579,264 @@ public class OrderApp {
 #### 4-1장. 스프링 컨테이너 생성
 
 
+<b style="color:dodgerblue">스프링 컨테이너(인터페이스) : ApplicationContext</b>
+
+스프링 컨테이너는 인터페이스이다
+
+
+<b style="color:lightgreen">Java Annotation으로 구현한 컨테이너 : new AnnotationConfigApplicationContext</b>
+
+<b style="color:lightgreen">XML을 기반으로 구현한 컨테이너 : new XmlConfigApplicationContext</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/36.png)
+
+<b style="color:aquamarine">ApplicationContext를 스프링 컨테이너라고 표현을 한다</b>
+
+<b style="color:aquamarine"> 그렇다면 컨테이너란 무엇인가? : 뭔가 사용할 객체들을 담고있는 것 </b>
+
+스프링 컨테이너를 부를때는 BeanFactory, ApplicationContext로 구분해서 이야기한다.
+
+실제로 BeanFactory를 직접 사용하는 경우는 거의 없으므로 일반적으로 ApplicationContext를 스프링 컨테이너라고 한다.
+
+<b style="color:aquamarine">[핵심] 스프링 컨테이너의 생성 과정</b>
+
+1. 우리가 먼저 new AnnotationConfigApplicationContext(클래스명)을 하게되면 AppConfig.class의 정보를 준다
+2. 그러면 스프링 컨테이너가 딱 만들어진다
+3. 스프링 컨테이너를 보면 스프링 빈 저장소라는곳이 있다
+4. 빈 저장소(빈 이름 : 빈 객체)로 되어있다
+5. [key : 빈 이름 , value : 빈 객체]로 이루어진 빈 저장소
+6. 스프링 컨테이너를 생성할 때는 AppConfig.class 이 구성 설정 정보를 지정해줘야 하는데 그 방법이 파라미터로 AppConfig.class 파일을 넘겨주는 것이다
+7. 그러면 이걸 보고(AppConfig.class) '아 내가 객체 생성을 해야겠는데?!' 라고 하면서 객체를 생성해야 한다고 인지를 하게 된다
+8. AppConfig.class 파일을 보니 @Bean이라고 적혀있는것들을 확인
+9. @Bean이 붙어있는것을 모두 일단 호출한다음
+10. 스프링 빈 저장소에 bean이름 : memberService , bean객체 : MemberServiceImpl@x01 등록
+11. 현재 4개 등록되어 있는데 모두 4개를 객체 등록해주고 이것을 스프링 Bean이라고 한다
+12. 스프링 빈 등록이 완료되면 의존관계를 넣어준다(memberService의 의존관계에 memberRepository를 넣어줌)
+13. orderService의 경우는 memberRepository, discountPolicy 의존관계를 넣어준다
+14. 스프링 빈 객체의 참조값들이 모두 연결이 된다
+15. 단순히 자바 코드를 호출하는 것 같지만, 차이가 있다(추후에 싱글톤 컨테이너에서 설명)
+16. 이제 스프링 컨테이너에서 데이터를 조회해보자
+
+
+* 주의점 : 빈 이름은 메서드 이름을 사용하고, 별도 지정도 가능
+* 빈 이름은 다른 이름을 부여 해야한다. 동일하면 다른 빈이 무시되거나, 덮어버리기 때문에 오류가 발생함
+
+실무에서는 최대한 단순하고 명확하게 설정을 해야한다
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/37.png)
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/38.png)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/39.png)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/41.png)
+
+
+<br>
+<br>
+
+#### 4-2장. 컨테이너에 등록된 모든 빈 조회
+
+스프링 컨테이너에 등록된 모든 빈 조회(테스트 코드 진행)
+
+test > java > hello.core 밑에 beanfind 패키지 생성
+
+beanfind 패키지 아래에 ApplicationContextInfoTest.class 파일 생성
+
+```java
+package hello.core.beanfind;
+
+import hello.core.AppConfig;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class ApplicationContextInfoTest {
+
+    //AnnotationConfigApplicationContext 대신에 ApplicationContext 사용 가능
+    AnnotationConfigApplicationContext ac =
+            new AnnotationConfigApplicationContext(AppConfig.class);
+
+    @Test
+    @DisplayName("모든 빈 출력하기")
+    void findAllBean(){
+        String[] beanDefinitionNames = ac.getBeanDefinitionNames();
+
+        for(String beanDefinitionName : beanDefinitionNames){
+            Object bean = ac.getBean(beanDefinitionName);
+            System.out.println("name = "+beanDefinitionName+" Object = "+bean);
+        }
+    }
+}
+```
+
+
+정상적으로 모든 bean 출력
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/42.png)
+
+ 
+```
+internalConfigurationAnnotationProcessor
+internalAutowiredAnnotationProcessor
+internalCommonAnnotationProcessor
+internalEventListenerProcessor
+internalEventListenerFactory
+```
+
+위 5개의 Bean의 경우 스프링 내부에서 자동으로 등록하는 Bean(확장을 위한 스프링 기반이 되는 Bean)
+
+만약 내가 등록한 Bean들만 조회하고 있으면
+
+```java
+package hello.core.beanfind;
+
+import hello.core.AppConfig;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class ApplicationContextInfoTest {
+
+    AnnotationConfigApplicationContext ac =
+            new AnnotationConfigApplicationContext(AppConfig.class);
+
+    @Test
+    @DisplayName("모든 빈 출력하기")
+    void findAllBean(){
+        String[] beanDefinitionNames = ac.getBeanDefinitionNames();
+
+        for(String beanDefinitionName : beanDefinitionNames){
+            Object bean = ac.getBean(beanDefinitionName);
+            System.out.println("name = "+beanDefinitionName+" Object = "+bean);
+        }
+    }
+
+    @Test
+    @DisplayName("애플리케이션 빈 출력하기")
+    void findApplicationBean(){
+        String[] beanDefinitionNames = ac.getBeanDefinitionNames();
+
+        for(String beanDefinitionName : beanDefinitionNames){
+            BeanDefinition beanDefinition 
+                                = ac.getBeanDefinition(beanDefinitionName);
+
+            // 내가 애플리케이션 개발을 위해 등록한 경우
+
+            //Role ROLE_APPLICATION: 직접 등록한 애플리케이션 빈
+            //Role ROLE_INFRASTRUCTURE : 스프링이 내부에서 사용하는 빈
+
+            if(beanDefinition.getRole() == BeanDefinition.ROLE_APPLICATION){
+                Object bean = ac.getBean(beanDefinitionName);
+                System.out.println("name = "+beanDefinitionName+" Object = "+bean);
+            }
+        }
+    }
+}
+```
+
+내가 등록된 빈들만 조회되는 것을 확인 가능
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/43.png)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/44.png)
+
+<br>
+
+#### 4-3장. 스프링 빈 조회 - 기본
+
+스프링 컨테이너에서 스프링 빈을 찾는 가장 기본적인 조회 방법
+
+ac.getBean(빈이름, 타입)
+
+ac.getBean(타입)
+
+조회 대상 스프링 빈이 없으면 예외 발생
+
+NoSuchBeanDefinitionException : No bean names 'xxxxx' available
+
+text > hello.core 밑에 아까 만들었던 beanfind 패키지 아래에 ApplicationContextBasicFindTest.class 파일 생성
+
+```java
+package hello.core.beanfind;
+
+import hello.core.AppConfig;
+import hello.core.member.MemberService;
+import hello.core.member.MemberServiceImpl;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class ApplicationContextBasicFindTest {
+
+    ApplicationContext ac =
+            new AnnotationConfigApplicationContext(AppConfig.class);
+
+    @Test
+    @DisplayName("빈 이름으로 조회")
+    void findBeanByName(){
+        MemberService memberService = ac.getBean("memberService", MemberService.class);
+        System.out.println("memberService = "+memberService);
+        System.out.println("memberService.getClass() = "+memberService.getClass());
+
+        //이제 Assertions를 지우고 static을 달아보겠다
+        
+        /* (기존 방식)
+            Assertions.assertThat(memberService)
+                .isInstanceOf(MemberServiceImpl.class);
+        */
+
+        //명령어 : option + enter
+        //아니면 그냥 assertThat하고 import할때 static (assertJ) 클릭
+        assertThat(memberService).isInstanceOf(MemberServiceImpl.class);
+    }
+
+    @Test
+    @DisplayName("이름 없이 타입으로만 조회")
+    void findBeanByType(){
+        MemberService memberService
+                 = ac.getBean(MemberService.class); //타입으로만 조회도 가능(이름 빼고)
+        assertThat(memberService).isInstanceOf(MemberServiceImpl.class);
+    }
+
+    @Test
+    @DisplayName("구체 타입으로 조회")
+    void findBeanByName2(){
+        MemberService memberService
+                 = ac.getBean("memberService", MemberServiceImpl.class);
+        assertThat(memberService).isInstanceOf(MemberServiceImpl.class);
+    }
+
+    //구체 타입 조회는 좋은 예제는 아니다(구체화에 의존하면 안되기 때문에)
+}
+```
+
+민약 등록되지 않은 Bean을 조회하면 아래 처럼 에러가 발생
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/45.png)
+
+```java
+    @Test
+    @DisplayName("빈 이름으로 조회X")
+    void findBeanByNameX(){
+        org.junit.jupiter.api.Assertions.assertThrows(NoSuchBeanDefinitionException.class, () -> ac.getBean("xxxx", MemberService.class));
+        
+        //위 예제는 테스트 코드 쓸때 예외가 발생해야하고 그 예외가 NoSuchBeanDefinitionException일 경우에만 테스트가 정상적으로 합격 표시를 하겠다는 뜻
+    }
+```
+
+일단 위 코드는 참고만 하자
+
+
+
+
+
 
 
 
