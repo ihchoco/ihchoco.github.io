@@ -2005,6 +2005,949 @@ public class ApplicationContextExtendsFindTest {
 
 <b style="color:aquamarine">부모 타입으로 조회시, 자식이 어디까지 조회가 되는지 알아야지 자동 주입에 대해서도 잘 이해할 수 있기 때문이다</b>
 
+<br>
+
+#### 4-6장. BeanFactory와 ApplicationContext
+
+BeanFactory는 무엇인가?
+
+ApplicationContext[interface]는 BeanFactory[interface]를 상속 받고 있다
+
+BeanFactory는 스프링 컨테이너의 최상위 인터페이스이다.
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/49.png)
+
+
+<b style="color:cornflowerblue">스프링 빈을 관리하고 조회하는 역할을 담당한다[ getBean() 메소드 등] 제공</b>
+
+그럼 ApplicationContext는 무엇인가?
+
+BeanFactory 기능을 모두 상속받아서 제공한다.
+
+빈을 관리하고 검색하는 기능을 BeanFactory가 제공해주는데, 그러면 둘의 차이가 뭘까?
+
+애플리케이션을 개발할 때는 빈을 관리하고 조회하는 기느은 물론이고, 수 많은 부가기능이 필요하다.
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/50.png)
+
+정리
+
+1. ApplicationContext는 BeanFactory의 기능을 상속받는다.
+2. ApplicationContext는 빈 관리기능 + 편리한 부가 기능을 제공한다.
+3. BeanFactory를 직접 사용할 일은 거의 없다. 부가기능이 포함된 ApplicationContext를 사용한다
+4. BeanFactory나 ApplicationContext를 스프링 컨테이너라 한다.
+
+<br>
+
+#### 4-7장. 다양한 설정 형식 지원 - 자바 코드, XML
+
+<b style="color:dodgerblue">깊이 있게 하지 않고 알아만 두기</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/51.png)
+
+test > java > hello.core 아래에 xml 패키지 생성 후 XmlAppContext 클래스 파일 생성
+
+```java
+package hello.core.xml;
+
+import hello.core.member.MemberService;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
+
+public class XmlAppContext {
+
+    @Test
+    void xmlAppContext(){
+        ApplicationContext ac = new GenericApplicationContext("appConfig.xml");
+        MemberService memberService = ac.getBean("memberService", MemberService.class);
+        Assertions.assertThat(memberService).isInstanceOf(MemberService.class);
+    }
+}
+```
+
+이렇게만 하면 에러가 난다(appConfig.xml이 없으니까)
+
+이번에는 appConfig.xml파일을 생성해보자
+
+<b style="color:aquamarine">경로 : main > resources 폴더 아래에 생성해야한다</b>
+
+<b style="color:lightgreen">[핵심] 자바 코드가 아닌건 무조건 resources 폴더 아래에 위치해야 한다</b>
+
+resources 파일 아래에 file 선택하고 appConfig.xml 이름으로 생성(스프링 설정 xml 파일로 하면 더 편하다)
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns="http://~"
+       xmlns:xsi="~"
+       xsi:schemaLocation="http://~">
+
+    <bean id="memberService" class="hello.core.member.MemberServiceImpl">
+        <constructor-arg name="membeRepositoryr" ref="memberRepository" />
+    </bean>
+
+    <bean id="memberRepository" class="hello.core.member.MemoryMemberRepository"/>
+
+
+    <bean id="orderService" class="hello.core.order.OrderServiceImpl">
+        <constructor-arg name="memberRepository" ref="memberRepository"/>
+        <constructor-arg name="discountPolicy" ref="discountPolicy"/>
+    </bean>
+
+    <bean id="discountPolicy" class="hello.core.discount.RateDiscountPolicy"/>
+
+</beans>
+```
+
+기존 자바 코드(AppConfig.class)로 작성한 내용과 완전 동일함
+
+xml 기반 방식은 최근 사용하지 않으니까 필요하면 레퍼런스 참고해서 작성하자
+
+<br>
+
+#### 4-8장. 스프링 빈 설정 메타 정보 - BeanDefinition
+
+약간 깊이 있는 내용
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/52.png)
+
+<b style="color:lightgreen">[핵심] 스프링 컨테이너는 BeanDefinition에만 의존한다</b>
+
+AppConfig.class이든 appConfig.xml이든 appConfig.xxx이든 상관없다
+
+설계 자체를 추상화에만 의존하도록 하였다
+
+BeanDefinition 자체가 Interface이다(스프링 컨테이너는 BeanDefinition에만 의존)
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/53.png)
+
+<b style="color:mediumspringgreen">이번 장에는 어려우면 그냥 그런갑다 하고 넘어가도 되지만 이미 두번째 듣는데 이번에는 원리를 알아두면 도움이 될듯</b>
+
+이거 몰라도 스프링 개발하는데는 문제가 없지만 알면 더 깊이있게 이해하면서 할 수 있지 않을까?
+
+AnnotatedBeanDefinitionReader가 BeanDefinition에는 Reader가 있는데 Config 파일이 넘어오면 그걸 Reader가 설정정보(텍스트마냥) 그냥 읽은다음 BeanDefition을 생성한다
+
+GenericXmlApplicationContext에 들어가보면 XmlBeanDefinitionReader라는게 있다
+
+이걸로 XML 파일을 그대로 읽는다
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/54.png)
+
+test > java > hello.core 아래에 beandefinition이라는 패키지 생성 
+
+그 아래에 BeanDefinitionTest 클래스 파일 생성
+
+```java
+package hello.core.beandefinition;
+
+import hello.core.AppConfig;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class BeanDefinitionTest {
+
+    AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(AppConfig.class);
+
+    @Test
+    @DisplayName("빈 설정 메타정보 확인")
+    void findApplicationBean(){
+        String[] beanDefinitionNames = ac.getBeanDefinitionNames();
+
+        for(String beanDefinitionName : beanDefinitionNames){
+            BeanDefinition beanDefinition = ac.getBeanDefinition(beanDefinitionName);
+
+            if(beanDefinition.getRole() == BeanDefinition.ROLE_APPLICATION){
+                System.out.println("beanDefinitionName = "+beanDefinitionName + " beanDefinition = "+beanDefinition);
+            }
+        }
+    }
+}
+```
+
+scope, lazyInit, autowireMode, initMethodName등 다양한 정보를 확인 가능
+
+```java
+beanDefinitionName = appConfig beanDefinition = Generic bean: class [hello.core.AppConfig$$EnhancerBySpringCGLIB$$40ebafd4]; scope=singleton; abstract=false; lazyInit=null; autowireMode=0; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=null; factoryMethodName=null; initMethodName=null; destroyMethodName=null
+
+
+beanDefinitionName = memberService beanDefinition = Root bean: class [null]; scope=; abstract=false; lazyInit=null; autowireMode=3; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=appConfig; factoryMethodName=memberService; initMethodName=null; destroyMethodName=(inferred); defined in hello.core.AppConfig
+
+
+beanDefinitionName = memberRepository beanDefinition = Root bean: class [null]; scope=; abstract=false; lazyInit=null; autowireMode=3; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=appConfig; factoryMethodName=memberRepository; initMethodName=null; destroyMethodName=(inferred); defined in hello.core.AppConfig
+
+
+beanDefinitionName = orderService beanDefinition = Root bean: class [null]; scope=; abstract=false; lazyInit=null; autowireMode=3; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=appConfig; factoryMethodName=orderService; initMethodName=null; destroyMethodName=(inferred); defined in hello.core.AppConfig
+
+
+beanDefinitionName = discountPolicy beanDefinition = Root bean: class [null]; scope=; abstract=false; lazyInit=null; autowireMode=3; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=appConfig; factoryMethodName=discountPolicy; initMethodName=null; destroyMethodName=(inferred); defined in hello.core.AppConfig
+
+```
+ 
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/55.png)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/56.png)
+
+<b style="color:mediumspringgreen">[핵심 정리] BeanDefinition에 대해서는 너무 깊이 이해 하지말고, 스프링이 다양한 형태의 설정 정보를 BeanDefinition으로 추상화 해서 사용한다 정도만 이해하자</b>
+
+```java
+
+public class BeanDefinitionTest {
+
+    AnnotationConfigApplicationContext ac = 
+            new AnnotationConfigApplicationContext(AppConfig.class);
+
+    /*
+        만약 AnnotationConfigApplicationContext 대신 
+        ApplicationContext ac 를 쓰게 되면 에러가 발생하게 되는데 그 이유는 
+        ac.getBeanDefinition() 기능이 ApplicationContext에는 없기 때문이다
+    */
+```
+
+빈 등록 방법은 크게 2가지 있음
+
+1. 직접 스프링 등록 하는 방법(XML방식)
+2. 팩토리 메서드 방법 : 기존에 자바 코드로 AppConfig를 만들고 @Configuration, @Bean 달아서 직접 등록해주는 방식
+
+
+<br>
+
+### 5장. 싱글톤 컨테이너
+#### 5-1장. 웹 애플리케이션과 싱글톤
+
+스프링은 태생적으로 기업용 온라인 서비스 기술을 지원하기 위해 탄생하였음
+
+<b style="color:aquamarine">웹 어플리케이션은 종류가 많음(온라인 처리 , 서버에 하나만 떠있는 데몬같은 프로세스, 배치를 해주는 작업 등 여러 종류의 애플리케이션이 있음)</b>
+
+
+하지만 대부분의 스프링 애플리케이션은 웹 애플리케이션이다.
+
+하지만 이것 말고도 배치, 데몬 등 만드는 작업도 진행 할 수 있다
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/57.png)
+
+스프링이 없는 경우에는 AppConfig에 있는 memberService를 호출할 때마다 new MemberServiceImpl객체를 생성하게 되는데 만약 3번 memberService를 요청하면 3개의 객체가 생성이 된다
+
+<b style="color:mediumspringgreen">만약 웹에서 고객이 요청을 계속한다면....?! 객체가 너어무무 많이 생성되지 않을까?</b>
+
+test > java > hello.core 밑에 singletone 패키지를 만들어서 SingleToneTest 클래스 파일을 생성
+
+```java
+package hello.core.singleton;
+
+import hello.core.AppConfig;
+import hello.core.member.MemberService;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class SingletonTest {
+
+    @Test
+    @DisplayName("스프링 없는 순수한 DI 컨테이너")
+    public void pureContainer(){
+        AppConfig appCOnfig = new AppConfig();
+
+        //1. 조회 : 호출할 때 마다 객체를 생성
+        MemberService memberService1 = appCOnfig.memberService();
+
+        //2. 조회 : 호출할 때 마다 객체를 생성
+        MemberService memberService2 = appCOnfig.memberService();
+
+        //참조값이 다른 것을 확인
+        System.out.println("memberService1 = "+memberService1);
+        System.out.println("memberService2 = "+memberService2);
+
+        //memberService1 != memberService2
+        Assertions.assertThat(memberService1).isNotSameAs(memberService2);
+    }
+}
+```
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/58.png)
+
+다른 객체가 생성 되는것을 확인 할 수 있다
+
+
+<b style="color:lightgreen">효율적이지 않다</b>
+
+<b style="color:aquamarine">
+
+우리가 만들었던 스프링 없는 순수한 DI 컨테이너인 AppConfig는 요청을 할 때 마다 객체를 새로 생성한다.
+
+고객 트래픽이 초당 100이 나오면 초당 100개 객체가 생성되고 소멸된다 > 메모리 낭비가 심하다
+
+해결방안은 해당 객체가 딱 1개만 생성되고, 공유하도록 설계하면 된다 > 싱글톤 패턴
+
+</b>
+
+<br>
+
+#### 5-2장. 싱글톤 패턴
+
+객체 인스턴스는 꼭 1개만 생성하여 사용
+
+test > java > hello.core > SingletonService 클래스 만들기
+
+```java
+package hello.core.singleton;
+
+public class SingletoneService {
+
+    //클래스 로딩과 동시에 객체를 생성
+    private static final SingletoneService instance = new SingletoneService();
+
+    //클래스를 생성하지 않고 클래스명.getInstance를 통해서 사용 가능
+    public static SingletoneService getInstance(){
+        return instance;
+    }
+
+    //외부에서 SingletonService를 만들지 못하게 하는 작업(외부에서 만들려고 하면 컴파일 에러)
+    private SingletoneService(){
+
+    }
+
+    public void logic(){
+        System.out.println("싱글톤 객체 로직 호출");
+    }
+
+}
+```
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/59.png)
+
+기존에 만들었던 SingletonTest 파일 아래에 테스트 코드 추가
+
+```java 
+package hello.core.singleton;
+
+import hello.core.AppConfig;
+import hello.core.member.MemberService;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class SingletonTest {
+
+    @Test
+    @DisplayName("스프링 없는 순수한 DI 컨테이너")
+    public void pureContainer(){
+        AppConfig appCOnfig = new AppConfig();
+
+        //1. 조회 : 호출할 때 마다 객체를 생성
+        MemberService memberService1 = appCOnfig.memberService();
+
+        //2. 조회 : 호출할 때 마다 객체를 생성
+        MemberService memberService2 = appCOnfig.memberService();
+
+        //참조값이 다른 것을 확인
+        System.out.println("memberService1 = "+memberService1);
+        System.out.println("memberService2 = "+memberService2);
+
+        //memberService1 != memberService2
+        Assertions.assertThat(memberService1).isNotSameAs(memberService2);
+    }
+
+    @Test
+    @DisplayName("싱글톤 패턴을 적용한 객체 사용")
+    void singletonServiceTest(){
+        SingletoneService singletoneService1 = SingletoneService.getInstance();
+        SingletoneService singletoneService2 = SingletoneService.getInstance();
+
+        System.out.println("singletonService1 = "+singletoneService1);
+        System.out.println("singletonService1 = "+singletoneService2);
+
+        Assertions.assertThat(singletoneService1).isSameAs(singletoneService2);
+
+        //same 이란 java ==
+        //equal 이란 Java equals
+
+    }
+}
+```
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/60.png)
+
+
+그럼 AppConfig도 동일하게 static으로 만들어넣고 getInstance를 하면 싱글톤으로 만들수있지 않나?
+
+NO! 스프링 컨테이너에서 생성될 때 자동으로 위 작업을 하면서 싱글톤으로 만들어주기 때문에 별도 필요가 없음
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/61.png)
+
+싱글톤은 알아두지만 크게 고려하지 않아도 괜찮음
+
+#### 5-3장. 싱글톤 컨테이너
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/62.png)
+
+```java
+@Test
+@DisplayName("스프링 컨테이너와 싱글톤")
+void springContainer(){
+    //AppConfig appCOnfig = new AppConfig();
+    ApplicationContext ac = new AnnotationConfigApplicationContext(AppConfig.class);
+
+
+    //1. 조회 : 호출할 때 마다 객체를 생성
+    //MemberService memberService1 = appCOnfig.memberService();
+    MemberService memberService1 = ac.getBean("memberService", MemberService.class);
+
+    //2. 조회 : 호출할 때 마다 객체를 생성
+    //MemberService memberService2 = appCOnfig.memberService();
+    MemberService memberService2 = ac.getBean("memberService", MemberService.class);
+
+
+    //참조값이 다른 것을 확인
+    System.out.println("memberService1 = "+memberService1);
+    System.out.println("memberService2 = "+memberService2);
+
+    //memberService1 != memberService2
+    Assertions.assertThat(memberService1).isSameAs(memberService2);
+}
+```
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/63.png)
+
+기존 자바 DI 컨테이너에서 스프링 컨테이너로 변환하면서 장점이 무엇인지 설명은 추후에 한다고 하였는데
+
+여기에 사용되는 싱글톤 방식이 기본적으로 적용이 되며 별도 코드를 작성할 필요가 없다
+
+<br>
+
+
+#### 5-4장. 싱글톤 방식의 주의점
+
+
+[핵심강의] 싱글톤 주의점
+
+<b style="color:cornflowerblue">싱글톤 패턴은 상태를 유지하게 설계하면 안된다(무상태 설계여야 한다)</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/64.png)
+
+가급적 읽기만 가능해야 하며, 필드 대신에 자바에서 공유되지 않는, 지역변수, 파라미터, ThreadLocal등을 사용해야 한다
+
+일단 예시를 보면서 확인해보자
+
+test > hello.core > singleton 패키지 아래에 StatefulService 클래스 파일 생성
+
+
+```java
+package hello.core.singleton;
+
+public class StatefulService {
+
+    private int price; //상태를 유지하는 필드
+
+    public void order(String name, int price){
+        System.out.println("name = "+name+" price = "+price);
+        this.price = price;
+    }
+
+    public int getPrice(){
+        return price;
+    }
+}
+```
+
+[단축키] 테스트 코드 생성 : Command + shift + t
+
+test > hello.core > singleton 패키지 아래에 StatefulServiceTest 클래스 파일 생성
+
+```java
+package hello.core.singleton;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class StatefulServiceTest {
+
+    @Test
+    void statefulServiceSingleton(){
+        ApplicationContext ac = 
+                new AnnotationConfigApplicationContext(TestConfig.class);
+
+        StatefulService statefulService1 = ac.getBean(StatefulService.class);
+        StatefulService statefulService2 = ac.getBean(StatefulService.class);
+
+        //ThreadA : A 사용자 10000원 주문
+        statefulService1.order("userA", 10000);
+
+        //ThreadB : B사용자 20000원 주문
+        statefulService2.order("userB", 20000);
+
+        //A가 주문하고 금액을 조회하는 사이에 B가 들어와서 주문을 하는 경우
+
+        //당연히 10000원이 나오게 기대하지만 실제로 결과는 20000원이 나온다
+
+        //TrheadA : 사용자A 주문 금액 조회
+        int price = statefulService1.getPrice();
+        System.out.println("price = "+price);
+
+    }
+
+    static class TestConfig{
+
+        @Bean
+        public StatefulService statefulService(){
+            return new StatefulService();
+        }
+    }
+}
+```
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/65.png)
+
+
+<b style="color:cornflowerblue">당연히 10000원이 나오게 기대하지만 실제로 결과는 20000원이 나온다</b>
+
+이렇게 나오는 이유는 무엇인가?
+
+<b style="color:mediumspringgreen">
+당연하지!!! [핵심] 여기서 20000원이 덮어씌어진 이유는 statefulService1, 2 모두 싱글톤 방식으로 생성되기 때문에 같은 객체를 공유하고 있음!!
+</b>
+
+그런데 객체의 필드값(private int price)는 처음에 10000원이었는데 B가 주문하면서 20000원이 들어가면 당연하게 A객체 금액을 조회해봐도 공유되기 때문에 20000원이 나오게 된다
+
+아주 망한 케이스
+
+<b style="color:lightgreen">사용자 A는 10000원 금액을 주문을 넣었는데 결과를 열어보니 20000원이 나옴.. 이게 만약 몇백, 몇천만원이면.. 서비스 접어야 할정도로 큰 이슈임</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/66.png)
+
+특정 클라이언트가 공유되는 값을 변경해버리는 경우가 있음
+
+<b style="color:mediumspringgreen">[핵심정리] 스프링은 항상 무상태로 설계 해야한다</b>
+
+방금 코드를 무상태로 설계 하는 방법
+
+StatefulService 클래스 파일을 아래와 같이 수정하면 된다
+
+```java
+package hello.core.singleton;
+
+public class StatefulService {
+
+//    private int price; //상태를 유지하는 필드
+
+    public int order(String name, int price){
+        System.out.println("name = "+name+" price = "+price);
+//        this.price = price;
+
+        return price;
+    }
+
+//    public int getPrice(){
+//         return price;
+//    }
+}
+```
+
+StatefulServiceTest 클래스 파일도 수정
+
+```java
+package hello.core.singleton;
+
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class StatefulServiceTest {
+
+    @Test
+    void statefulServiceSingleton(){
+        ApplicationContext ac = new AnnotationConfigApplicationContext(TestConfig.class);
+
+        StatefulService statefulService1 = ac.getBean(StatefulService.class);
+        StatefulService statefulService2 = ac.getBean(StatefulService.class);
+
+        //ThreadA : A 사용자 10000원 주문
+        //statefulService1.order("userA", 10000);
+        int userAPrice = statefulService1.order("userA", 10000);
+
+        //ThreadB : B사용자 20000원 주문
+        //statefulService2.order("userB", 20000);
+        int userBPrice = statefulService1.order("userB", 20000);
+
+
+        //A가 주문하고 금액을 조회하는 사이에 B가 들어와서 주문을 하는 경우
+
+        //당연히 10000원이 나오게 기대하지만 실제로 결과는 20000원이 나온다
+
+        //TrheadA : 사용자A 주문 금액 조회
+        //int price = statefulService1.getPrice();
+        int price = userAPrice;
+        System.out.println("price = "+price);
+
+        Assertions.assertThat(price).isEqualTo(10000);
+
+    }
+
+    static class TestConfig{
+
+        @Bean
+        public StatefulService statefulService(){
+            return new StatefulService();
+        }
+    }
+}
+```
+
+이렇게 하면 B가 주문하든 말든 A가 주문했던 10000원이 정상적으로 나오는 것을 확인 할 수 있다
+
+<b style="color:lightgreen">이런 문제가 터지면 나의 아이디인데 다른사람 정보가 막 보임(복구하는데 몇 달 걸림)</b>
+
+몇년에 한번씩 발생할 수 있는 문제
+
+
+<b style="color:dodgerblue">공유 필드는 꼭 항상 조심해야 하고 항상 무상태로 설계해야한다</b>
+
+<br>
+
+#### 5-5장. @Configuration과 싱글톤
+
+
+이번에는 @Configuration에 대해서 파헤쳐보자
+
+사실 @Configuration은 싱글톤을 위해서 존재하는 것이다
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/67.png)
+
+
+AppConfig.class 코드를 봐보자
+
+```java
+package hello.core;
+
+@Configuration //스프링에서는 설정정보를 @Configuration 어노테이션 추가해주어야 한다
+public class AppConfig {
+
+    @Bean //@Bean을 추가해주면 이게 모두 스프링 컨테이너라는곳에 자동으로 등록이 된다
+    public MemberService memberService(){
+        return new MemberServiceImpl(memberRepository());
+    }
+
+    @Bean
+    public MemberRepository memberRepository(){
+        return new MemoryMemberRepository();
+    }
+    @Bean
+    public OrderService orderService(){
+        return new OrderServiceImpl( memberRepository(), discountPolicy() );
+    }
+    @Bean
+    public DiscountPolicy discountPolicy(){
+        //return new FixDiscountPolicy();
+        return new RateDiscountPolicy();
+    }
+}
+```
+
+```
+    @Bean memberService -> new MemoryMemberRepository() 호출
+    @Bean orderService -> new MemoryMemberRepository() 호출
+
+    이렇게 하면 2번 new MemoryMemberRepository가 생성되는것이 아닌가?
+
+    싱글톤이 깨지는게 아닌가? 하지만 스프링 컨테이너는 이 문제를 해결해주는데 방식은 어떻게 되는지 테스트 진행
+```
+
+기존 MemberServiceImpl, OrderServiceImpl에 테스트를 위한 코드를 만들어주자
+
+```java
+package hello.core.member;
+
+public class MemberServiceImpl implements MemberService{
+
+    private final MemberRepository memberRepository;
+
+    public MemberServiceImpl(MemberRepository memberRepository) {
+        this.memberRepository = memberRepository;
+    }
+
+    @Override
+    public void join(Member member) {
+        memberRepository.save(member);
+    }
+
+    @Override
+    public Member findMember(Long memberId) {
+        return memberRepository.findById(memberId);
+    }
+    
+    //테스트용 코드 << 이부분 추가
+    public MemberRepository getMemberRepository(){
+        return memberRepository;
+    }
+}
+```
+
+```java
+package hello.core.order;
+
+public class OrderServiceImpl implements OrderService{
+
+    private final MemberRepository memberRepository;
+    private final DiscountPolicy discountPolicy;
+
+    public OrderServiceImpl(MemberRepository memberRepository, DiscountPolicy discountPolicy) {
+        this.memberRepository = memberRepository;
+        this.discountPolicy = discountPolicy;
+    }
+
+    @Override
+    public Order createOrder(Long memberId, String itemName, int itemPrice) {
+        Member member = memberRepository.findById(memberId);
+        int discountPrice = discountPolicy.discount(member, itemPrice);
+
+        return new Order(memberId, itemName, itemPrice, discountPrice);
+    }
+
+    //테스트용 코드 << 이부분 추가
+    public MemberRepository getMemberRepository(){
+        return memberRepository;
+    }
+}
+```
+
+test > core.hello > singleton 패키지 아래에 > ConfigurationSingletonTest 클래스 생성
+
+```java
+package hello.core.singleton;
+
+import hello.core.AppConfig;
+import hello.core.member.MemberRepository;
+import hello.core.member.MemberServiceImpl;
+import hello.core.order.OrderServiceImpl;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class ConfigurationSingletonTest {
+
+    @Test
+    void configurationTest(){
+        ApplicationContext ac
+                = new AnnotationConfigApplicationContext(AppConfig.class);
+
+        MemberServiceImpl memberService = ac.getBean("memberService", MemberServiceImpl.class);
+        OrderServiceImpl orderService = ac.getBean("orderService", OrderServiceImpl.class);
+        MemberRepository memberRepository = ac.getBean("memberRepository", MemberRepository.class);
+
+
+        MemberRepository memberRepository1 = memberService.getMemberRepository();
+        MemberRepository memberRepository2 = orderService.getMemberRepository();
+
+        System.out.println("memberService -> memberRepository1= "+memberRepository1);
+        System.out.println("orderService -> memberRepository2 = "+memberRepository2);
+        System.out.println("memberRepository "+memberRepository);
+
+
+    }
+}
+```
+
+테스트 결과를 보면 3개의 모든 memberRepository가 모두 동일한 결과로 나오는 것을 확인할 수 있다
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/68.png)
+
+
+아니 그러면 이게 new MemberRepository가 3번 호출하게끔 되어있는데 정확히 몇번 호출하는지 로그로 찍어보자
+
+appConfig.class 파일 수정
+
+```java
+package hello.core;
+
+import java.sql.SQLOutput;
+
+@Configuration //스프링에서는 설정정보를 @Configuration 어노테이션 추가해주어야 한다
+public class AppConfig {
+
+    /*
+        우리가 기대하는 호출 예상 시나리오
+        1. call AppConfig.memberSerivce
+        2. call AppConfig.memberRepository
+        3. call AppConfig.memberRepository
+        4. call AppConfig.orderService
+        5. call AppConfig.memberRepository
+
+        순서는 바뀔수 있지만 중요한건 memberRepository가 2번 수행된다는 것이다
+     */
+
+    @Bean //@Bean을 추가해주면 이게 모두 스프링 컨테이너라는곳에 자동으로 등록이 된다
+    public MemberService memberService(){
+        System.out.println("call AppConfig.memberService");
+        return new MemberServiceImpl(memberRepository());
+    }
+
+    @Bean
+    public MemberRepository memberRepository(){
+        System.out.println("call AppConfig.memberRepository");
+        return new MemoryMemberRepository();
+    }
+    @Bean
+    public OrderService orderService(){
+        System.out.println("call AppConfig.orderService");
+        return new OrderServiceImpl( memberRepository(), discountPolicy() );
+    }
+    @Bean
+    public DiscountPolicy discountPolicy(){
+        System.out.println("call AppConfig.discountPolicy");
+        //return new FixDiscountPolicy();
+        return new RateDiscountPolicy();
+    }
+}
+```
+
+ConfigurationSingletonTest 테스트 그대로 돌려보면 몇 번 호출되는지 확인 가능
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/69.png)
+
+```java
+call AppConfig.memberService
+15:30:13.102 [main] DEBUG org.springframework.beans.factory.support.DefaultListableBeanFactory - Creating shared instance of singleton bean 'memberRepository'
+
+call AppConfig.memberRepository
+15:30:13.104 [main] DEBUG org.springframework.beans.factory.support.DefaultListableBeanFactory - Creating shared instance of singleton bean 'orderService'
+
+call AppConfig.orderService
+15:30:13.105 [main] DEBUG org.springframework.beans.factory.support.DefaultListableBeanFactory - Creating shared instance of singleton bean 'discountPolicy'
+
+call AppConfig.discountPolicy
+```
+
+<b style="color:mediumspringgreen">사진을 확인해보면 call memberRepository가 딱 한번만 출력되는것을 볼 수 있는데 이걸 보고 스프링이 어떻게든 싱글톤을 유지하려고 하는구나 라는 것을 알 수 있다</b>
+
+그럼 이건 어떻게 스프링이 알아서 한번만 메소드를 호출하게끔 되어 있는것일까?
+
+다음시간에 계속
+
+<br>
+
+#### 5-6장. @Configuration과 바이트코드 조작의 마법
+
+
+<b style="color:deeppink">아까 위에 코드를 보면 분명 MemberRepository의 경우에는 3번 호출되야 하는것이 맞다</b>
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/70.png)
+
+```java
+@Test
+void configurationDeep(){
+    ApplicationContext ac
+            = new AnnotationConfigApplicationContext(AppConfig.class);
+
+    AppConfig bean = ac.getBean(AppConfig.class);
+
+    System.out.println("Bean = "+bean.getClass());
+}
+```
+
+> Bean = class hello.core.AppConfig$$EnhancerBySpringCGLIB$$f8afebd8
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/71.png)
+
+<b style="color:cornflowerblue">AppConfig 클래스 파일이 등록된 것이 아니라 CGLAB이라는 바이트코드 조작 라이브러리를 통해서 스프링이 AppConfig를 상속받는 다른 클래스를 스프링 컨테이너에 등록시켰기 때문에 클래스명이 다르게 나오는것</b>
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/72.png)
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/73.png)
+
+[핵심] AppConfig.class에 @Configuration을 빼고 테스트를 돌려도 정상적으로 메소드들이 Bean에 등록이 된다
+
+```java
+package hello.core;
+
+import java.sql.SQLOutput;
+
+//@Configuration //스프링에서는 설정정보를 @Configuration 어노테이션 추가해주어야 한다
+public class AppConfig {
+
+    /*
+        우리가 기대하는 호출 예상 시나리오
+        1. call AppConfig.memberSerivce
+        2. call AppConfig.memberRepository
+        3. call AppConfig.memberRepository
+        4. call AppConfig.orderService
+        5. call AppConfig.memberRepository
+
+        순서는 바뀔수 있지만 중요한건 memberRepository가 2번 수행된다는 것이다
+     */
+
+    @Bean //@Bean을 추가해주면 이게 모두 스프링 컨테이너라는곳에 자동으로 등록이 된다
+    public MemberService memberService(){
+        System.out.println("call AppConfig.memberService");
+        return new MemberServiceImpl(memberRepository());
+    }
+
+    @Bean
+    public MemberRepository memberRepository(){
+        System.out.println("call AppConfig.memberRepository");
+        return new MemoryMemberRepository();
+    }
+    @Bean
+    public OrderService orderService(){
+        System.out.println("call AppConfig.orderService");
+        return new OrderServiceImpl( memberRepository(), discountPolicy() );
+    }
+    @Bean
+    public DiscountPolicy discountPolicy(){
+        System.out.println("call AppConfig.discountPolicy");
+//        return new FixDiscountPolicy();
+        return new RateDiscountPolicy();
+    }
+}
+```
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/74.png)
+
+이렇게 하고 테스트를 진행해보면 아까는 Bean이름이 
+
+> Bean = class hello.core.AppConfig$$EnhancerBySpringCGLIB$$f8afebd8
+
+<b style="color:aquamarine">지금은 Bean이름이 class hello.core.AppConfig 라고 내가 만든 클래스가 등록되는 것을 확인할 수 있다</b>
+
+
+<b style="color:mediumspringgreen">[핵심] 무엇보다 Call MemberRepository가 아까는 한번만 로그에 찍혔지만 지금은 3번 찍히는것을 확인 할 수 있다</b>
+
+<b style="color:aquamarine">즉, 싱글톤 보장을 해주지 않는다</b>
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/74.png)
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/75.png)
+
+이렇게 하면 아까 MemberRepository가 같은 객체인지 검사하는 테스트도 같지 않다고 나오게 된다
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/76.png)
+
+테스트 완료후 AppConfig.class 파일에 다시 @Configuration을 달아주자
+
+<b style="color:aquamarine">[정리] 크게 고민하지말고, 스프링 설정 정보는 항상 @Configuration을 사용하자</b>
+
 참고  
  1. [스프링 핵심 원리 - 기본편 - 김영한](https://www.inflearn.com/course/%EC%8A%A4%ED%94%84%EB%A7%81-%ED%95%B5%EC%8B%AC-%EC%9B%90%EB%A6%AC-%EA%B8%B0%EB%B3%B8%ED%8E%B8/dashboard)
 
