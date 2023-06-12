@@ -2948,6 +2948,146 @@ public class AppConfig {
 
 <b style="color:aquamarine">[정리] 크게 고민하지말고, 스프링 설정 정보는 항상 @Configuration을 사용하자</b>
 
+<br>
+
+### 6장. 컴포넌트 스캔
+#### 6-1장. 컴포넌트 스캔과 의존관계 자동 주입 시작하기
+
+스프링 빈이 수십, 수백개가 되면 일일이 등록하기도 귀찮고, 설정 정보도 커지고 귀찮아 지는데 이것을 해결하기 위해 컴포넌트 스캔이 등장하게 되었다
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/77.png)
+
+java >hello.core 아래에 AutoAppConfig 클래스 파일 생성
+
+```java
+package hello.core;
+
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+
+@Configuration
+@ComponentScan(
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = Configuration.class)
+)
+public class AutoAppConfig {
+
+}
+```
+
+위에 @ComponentScan(excludeFilters를 설정한 이유는 기존에 만들었던 AppConfig와 중복을 피하기 위해서)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/78.png)
+
+이제 구현체들 클래스에 @Component 어노테이션을 달아주면 된다
+
+MemoryMemberRepository, ServiceImpl, FixDiscountPolicy, OrderServiceImpl에 붙여준다
+
+```java
+@Component
+public class FixDiscountPolicy implements DiscountPolicy{
+    ...
+}
+
+@Component
+public class MemoryMemberRepository implements MemberRepository{
+    ...
+}
+
+@Component
+public class MemberServiceImpl implements MemberService{
+
+    private final MemberRepository memberRepository;
+
+    @Autowired
+    public MemberServiceImpl(MemberRepository memberRepository) {
+        this.memberRepository = memberRepository;
+    }
+    ...
+}
+
+@Component
+public class OrderServiceImpl implements OrderService{
+    private final MemberRepository memberRepository;
+    private final DiscountPolicy discountPolicy;
+
+    @Autowired
+    public OrderServiceImpl(MemberRepository memberRepository, 
+                                    DiscountPolicy discountPolicy) {
+        this.memberRepository = memberRepository;
+        this.discountPolicy = discountPolicy;
+    }
+    ...
+}
+```
+
+@Component : 자동으로 빈 등록(bean 이름은 클래스명(대신 맨 앞은 소문자로 변환 : 
+
+Ex. MemberServiceImpl -> memberServiceImpl로 변환)
+
+@Autowired : 컨테이너에 빈으로 등록되어 있는 것들중에 같은 타입(인터페이스 포함) 매핑해서 객체 주입
+
+```java
+@Autowired //ac.getBean(MemberRepository.class)를 해서 나온 객체를 주입하는것과 같은 명령어
+public MemberServiceImpl(MemberRepository memberRepository){
+    this.memberRepository = memberRepository;
+}
+```
+
+그 다음 테스트 코드 작성
+
+test > java > hello.core > scan이라는 패키지 생성 > AutoAppConfigTest 클래스 파일 생성
+
+```java
+package hello.core.scan;
+
+import hello.core.AutoAppConfig;
+import hello.core.member.MemberService;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class AutoAppConfigTest {
+
+    @Test
+    void basicScan(){
+        AnnotationConfigApplicationContext ac 
+            = new AnnotationConfigApplicationContext(AutoAppConfig.class);
+
+        MemberService memberService = ac.getBean(MemberService.class);
+        Assertions.assertThat(memberService).isInstanceOf(MemberService.class);
+    }
+}
+```
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/79.png)
+
+정상적으로 테스트를 통과하면서 Autowired, Singleton bean이 생성되는것을 확인할 수 있다
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/80.png)
+
+
+<b style="color:mediumspringgreen">빈 이름 기본 전략 : MemberSerivceImpl 클래스 -> memberServiceImpl</b>
+
+<b style="color:lightgreen">빈 이름 직접 지정 : 만약 스프링 빈의 이름을 직접 지정하고 싶으면 @Component("memberServiceImpl") 이름을 지정하면 된다</b>
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/81.png)
+
+<b style="color:mediumspringgreen">기본 조회 전략은 타입이 같은 빈을 찾아서 주입한다</b>
+
+getBean(MemberRepository.class)와 동일하다고 이해하면 된다
+
+<b style="color:lightgreen">만약 중복으로 충돌하면 뒤에서 설명해주겠다</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/82.png)
+
+생성자에 파라미터가 많아도 다 찾아서 자동으로 주입한다
+
+컴포넌트 스캔이다 하면 자동으로 다 뒤져서 @Component 붙은 것들을 모두 스프링 컨테이너에 자동으로 등록해준다
+
+이렇게 되면 문제점이 설정정보를 안쓰기 때문에 의존관계를 어떻게 주입해야할지 모르는데 이 부분은 의존관계 자동주입(autowired - 타입으로 매칭)으로 해결
+
 참고  
  1. [스프링 핵심 원리 - 기본편 - 김영한](https://www.inflearn.com/course/%EC%8A%A4%ED%94%84%EB%A7%81-%ED%95%B5%EC%8B%AC-%EC%9B%90%EB%A6%AC-%EA%B8%B0%EB%B3%B8%ED%8E%B8/dashboard)
 
