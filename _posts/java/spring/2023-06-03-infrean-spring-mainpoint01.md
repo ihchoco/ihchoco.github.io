@@ -3088,6 +3088,172 @@ getBean(MemberRepository.class)와 동일하다고 이해하면 된다
 
 이렇게 되면 문제점이 설정정보를 안쓰기 때문에 의존관계를 어떻게 주입해야할지 모르는데 이 부분은 의존관계 자동주입(autowired - 타입으로 매칭)으로 해결
 
+<br>
+
+#### 6-2장. 탐색 위치와 기본 스캔 대상
+
+<b style="color:mediumspringgreen">@SpringBootApplication 안에 들어가보면 @ComponentScan이 들어있어서 SpringBoot 프로젝트 생성할 때 @ComponentScan을 달아주지 않아도 Bean 객체들이 생성될 수 있었다</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/83.png)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/84.png)
+
+<br>
+
+#### 6-3장. 필터
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/85.png)
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/86.png)
+
+
+<b style="color:mediumspringgreen">최근 스프링부트는 컴포넌트 스캔을 기본으로 제공하는데, 개인적으로 옵션을 변경하지 않고 사용하는것을 권장</b>
+
+
+#### 6-4장. 중복 등록과 충돌
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/87.png)
+
+수동 빈 등록 vs 자동 빈 등록이 충돌하면 수동 빈이 우선권을 가진다(수동 빈이 자동 빈을 오버라이딩)
+
+하지만 이런경우 오류를 찾기 어렵기 때문에 현재는 충돌하면 오류가 나도록 기본 값을 부여하였다
+
+
+### 7장. 의존관계 주입 방법
+#### 7-1장. 다양한 의존관계 주입 방법
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/88.png)
+
+생성자 주입
+
+스프링에 @Component 스캔을 할 때 OrderSerivceImpl 이라는게 있네? 라고 등록할 때 생성자를 호출하는데 보니까 여기에 @Autowired가 있네? 그러면 스프링 컨테이너에서 일치하는 타입의 빈을 꺼내서 주입시켜준다
+
+생성자 호출 방식 장점
+
+ 1. 딱 1번만 호출
+ 2. 불변, 필수 의존관계 사용
+
+좋은 아키텍처, 개발의 습관은 한계점과 제약이 있어야 한다.(만약 모르면 어디서 잘 못 되었는지 찾기가 어렵다)
+
+이런 불변 객체에다가 잘못 데이터를 넣을수 있음(그래서 @Getter, @Setter를 무분별하게 사용하면 안된다)
+
+<자바 기초>
+
+private final MemberRepository memberRepository;
+
+private final DiscountPolicy discountPlicy;
+
+<b style="color:mediumspringgreen">위 경우 final이 붙어 있으면 무조건 값이 있어야 한다.
+
+그래서 위 변수 선언후에 꼭 생성자에 저 변수들에 대해 값을 넣어주어야 한다</b>
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/89.png)
+
+생성자가 하나만 있을 경우에는 @Autowired를 생략할 수 있다(물론 클래스에 @Bean, @Component, @Service 등 있을경우에만)
+
+```java
+@Component
+public class OrderServiceImpl implements OrderSerivce{
+
+    private final MemberRepository memberRepository;
+    private final DiscountPolicy discountPolicy;
+
+    // @Autowired
+    public OrderSerivceImpl(MemberRepository memberRepository, 
+                                DiscountPolicy discountPolicy){
+        this.memberRepository = memberRepository;
+        this.discountPolicy = discountPolicy;
+    }
+}
+```
+
+하지만 생성자가 두개 이상이면 꼭 @Autowired를 해주어야 한다
+```java
+@Component
+public class OrderServiceImpl implements OrderSerivce{
+
+    private final MemberRepository memberRepository;
+    private final DiscountPolicy discountPolicy;
+
+    public OrderServiceImpl(){
+
+    }
+
+    @Autowired
+    public OrderSerivceImpl(MemberRepository memberRepository, 
+                                DiscountPolicy discountPolicy){
+        this.memberRepository = memberRepository;
+        this.discountPolicy = discountPolicy;
+    }
+}
+```
+
+<b style="color:mediumspringgreen">그냥 생성자가 하나일때는 @Autowired를 생략해도 괜찮다(이렇게 해서 그동안 자동으로 주입이 되었던구나!!!)</b>
+
+
+수정자 주입(setter 주입)
+
+```java
+@Component
+public class OrderServiceImpl implements OrderSerivce{
+
+    //1. final을 뺀다 
+
+    // private final MemberRepository memberRepository;
+    private MemberRepository memberRepository;
+
+    // private final DiscountPolicy discountPolicy;
+    private DiscountPolicy discountPolicy;
+
+    //2. set필드값
+    @Autowired
+    public void setMemberRepository(MemberRepository memberRepository){
+        this.memberRepository = memberRepository;
+    }
+
+    @Autowired
+    public void setDiscountPolicy(DiscountPolicy discountPolicy){
+        this.discountPolicy = discountPolicy;
+    }
+
+    //3. 생성자가 필요없음
+    /*
+    public OrderSerivceImpl(MemberRepository memberRepository, 
+                                DiscountPolicy discountPolicy){
+        this.memberRepository = memberRepository;
+        this.discountPolicy = discountPolicy;
+    }
+    */
+}
+```
+
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/90.png)
+
+자바 빈 프로퍼티 규약
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/91.png)
+
+요즘은 거의 생성자 주입을 사용한다
+
+필드 주입
+
+```java
+@Component
+public class OrderServiceImpl implements OrderSerivce{
+
+    @Autowired private final MemberRepository memberRepository;
+    @Autowired private final DiscountPolicy discountPolicy;
+
+}
+```
+
+![img2](../../../images/posts/java/spring/infrean-spring-mainpoint01/92.png)
+
+필드 주입은 자주 사용되었지만, 요즘은 테스트 하기가 어렵기 때문에 권장하지 않는 방식이다
+
+
+
 참고  
  1. [스프링 핵심 원리 - 기본편 - 김영한](https://www.inflearn.com/course/%EC%8A%A4%ED%94%84%EB%A7%81-%ED%95%B5%EC%8B%AC-%EC%9B%90%EB%A6%AC-%EA%B8%B0%EB%B3%B8%ED%8E%B8/dashboard)
 
