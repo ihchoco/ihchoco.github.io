@@ -1,6 +1,6 @@
 ---
 layout: single
-title : "[SPRING] 스프링 JPA SHOP 강의"
+title : "[SPRING] 스프링 JPA 도메인 설계 #1(도메인 설계 및 테스트 코드)"
 categories: spring
 tag: [aws, spring]
 toc : true
